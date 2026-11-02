@@ -32,7 +32,7 @@ struct FanStatusView: View {
                 if let fault = FanPanelText.faultLine(state: state, localization: localization) {
                     Text(fault)
                         .font(.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(FanPanelStyle.fault)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -84,13 +84,13 @@ struct FanStatusView: View {
             Text(FanPanelText.tempsLine(state: state))
                 .font(.caption)
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FanPanelStyle.caption)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Text(rpmPowerLine)
                 .font(.caption)
                 .monospacedDigit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FanPanelStyle.caption)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -145,7 +145,7 @@ struct FanStatusView: View {
                 if state.curveIsCustom {
                     Text(localization.string(.fanCustomCurve))
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(FanPanelStyle.footnote)
                 }
             }
         case .ai:
@@ -165,11 +165,11 @@ struct FanStatusView: View {
         case .auto:
             Text(localization.string(.fanSystemManaged))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(FanPanelStyle.footnote)
         case nil:
             Text(localization.format(.fanManagedExternally, state.modeRaw ?? "-"))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(FanPanelStyle.footnote)
         }
     }
 
@@ -198,11 +198,11 @@ struct FanStatusView: View {
         if state.aiTargetSelection == nil, let raw = state.aiTargetRaw {
             Text("\(localization.string(.fanTargetPrefix)) \(Int(raw.rounded()))°C")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(FanPanelStyle.footnote)
         } else if state.reasonRaw == "aiIdle" {
             Text(localization.string(.fanReasonAIIdle))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(FanPanelStyle.footnote)
         } else if let learned = state.aiLearnedPercent {
             Text("\(localization.string(.fanLearnedAirflow)) \(Int(learned.rounded()))%")
                 .font(.caption2)
@@ -264,21 +264,21 @@ struct FanStatusView: View {
             Text(FanPanelText.targetRpmLine(state: state, localization: localization))
                 .font(.caption2)
                 .monospacedDigit()
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .foregroundStyle(FanPanelStyle.footnote)
+                .fixedSize(horizontal: false, vertical: true)
             Text(FanPanelText.rangeNoteLine(state: state, localization: localization))
                 .font(.caption2)
                 .monospacedDigit()
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .foregroundStyle(FanPanelStyle.footnote)
+                .fixedSize(horizontal: false, vertical: true)
             Text(localization.string(.fanManualZeroNote))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .foregroundStyle(FanPanelStyle.footnote)
+                .fixedSize(horizontal: false, vertical: true)
             Text(localization.string(.fanFailsafeNote))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
+                .foregroundStyle(FanPanelStyle.footnote)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

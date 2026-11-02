@@ -151,7 +151,13 @@ enum FanPanelText {
     /// the user's mode), but only when status.json has caught up with the
     /// config; while they disagree the caption goes pending so the segmented
     /// control and the header can never name two different modes at once.
+    /// A declared control fault outranks everything: with the closed loop
+    /// broken the daemon has handed the fans back to macOS, and the header
+    /// must say that — not the configured mode ("AI 自动接管" would be a lie).
     static func headerCaption(state: FanPanelState) -> HeaderCaption {
+        if state.controlFault {
+            return .reason(.fanReasonAIIdle)
+        }
         if state.modePending, let selection = state.modeSelection {
             return .pending(selection)
         }

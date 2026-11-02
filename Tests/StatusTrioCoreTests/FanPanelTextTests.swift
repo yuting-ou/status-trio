@@ -93,6 +93,24 @@ struct FanPanelTextTests {
         #expect(FanPanelText.headerCaption(state: s) == .pending(.manual))
     }
 
+    /// A1: with the closed loop faulted the daemon has handed fans back to
+    /// macOS — the header must say THAT, not the configured mode name.
+    @Test func faultedHeaderShowsHandbackNeverTheConfiguredMode() {
+        var s = twoFanState()
+        s.controlFault = true
+        s.faultReasonRaw = "sensorUnavailable"
+        s.modeRaw = "ai"
+        s.modeSelection = .ai
+        s.modePending = false
+        s.reasonRaw = "ai" // stale reason from before the fault
+        #expect(FanPanelText.headerCaption(state: s) == .reason(.fanReasonAIIdle))
+        #expect(FanPanelText.headerCaption(state: s) != .reason(.fanReasonAI))
+
+        // Even a safety-floor reason cannot outrank the fault handback.
+        s.reasonRaw = "failsafe"
+        #expect(FanPanelText.headerCaption(state: s) == .reason(.fanReasonAIIdle))
+    }
+
     @Test func stableCaptionPrefersDaemonReasonThenMode() {
         var s = twoFanState()
         s.modeSelection = .manual
