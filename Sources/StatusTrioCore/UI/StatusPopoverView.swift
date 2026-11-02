@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 import AppKit
 import SwiftUI
 
@@ -191,6 +192,11 @@ struct StatusPopoverView: View {
                 state: panel.inputSource,
                 onOpen: { panel.showInputSourcePage() },
                 onOpenKeyboardSettings: openKeyboardSettings
+            )
+        case .fan:
+            FanStatusView(
+                monitor: panel.fanMonitor,
+                onSetMode: { panel.fanMonitor.apply($0) }
             )
         }
     }

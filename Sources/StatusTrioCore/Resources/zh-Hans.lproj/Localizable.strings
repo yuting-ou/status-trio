@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "无法切换到“%@”。请直接选择它或稍后重试。";
 "inputSource.switchUnconfirmed" = "macOS 已接受“%@”，但当前输入法仍是其他项。前台应用可能需要获得焦点。";
 "settings.popup.order.inputSource" = "输入法";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "风扇";
+"fan.daemonOffline" = "风扇守护进程未运行——安装或启动清风 FanCtl 后显示。";
+"fan.mode.auto" = "自动";
+"fan.mode.quiet" = "静音";
+"fan.mode.performance" = "性能";
+"fan.mode.curve" = "曲线";
+"fan.mode.manual" = "手动";
+"fan.managedExternally" = "由他处管理（%@）";
+"fan.controlFault" = "风扇控制故障";
 "settings.popup.volumeScroll.group" = "面板滚动";
 "settings.popup.volumeScroll" = "滚动调节音量";
 "settings.popup.volumeScroll.description" = "在状态面板内滚动即可调节输出音量。";

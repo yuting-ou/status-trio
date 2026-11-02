@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 import Combine
 import Foundation
 
@@ -63,6 +64,9 @@ final class StatusPanelViewModel: ObservableObject {
 
     let store: SystemStatusStore
     let settings: SettingsStore
+    /// FanCtl (清风) daemon bridge for the fan popup section. File-watch driven,
+    /// created eagerly so the section renders from the first popover open.
+    let fanMonitor: FanMonitor
     private let localization: Localization
     private let inputSourceController: InputSourceController
     private let chargeToFullNow: ChargeToFullNowController?
@@ -100,6 +104,7 @@ final class StatusPanelViewModel: ObservableObject {
         self.chargeToFullNow = chargeToFullNow
         self.updateScheduler = updateScheduler
         self.actions = actions
+        self.fanMonitor = FanMonitor()
         visiblePopupSections = settings.visiblePopupSections
         battery = PanelPresentationMapper.battery(
             store.popupSnapshot.battery,
@@ -169,6 +174,7 @@ final class StatusPanelViewModel: ObservableObject {
         guard !isStarted else { return }
         isStarted = true
         lifecycleGeneration &+= 1
+        fanMonitor.start()
         let sections = settings.visiblePopupSections
         if visiblePopupSections != sections { visiblePopupSections = sections }
         subscribeToPopupPresentationSources()
@@ -243,6 +249,7 @@ final class StatusPanelViewModel: ObservableObject {
         guard isStarted else { return }
         isStarted = false
         lifecycleGeneration &+= 1
+        fanMonitor.stop()
         pendingRefreshRegions = []
         sourceDemandCancellables.removeAll()
         subscribedSourceDemand = nil

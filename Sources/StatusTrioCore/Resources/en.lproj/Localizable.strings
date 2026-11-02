@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "Couldn’t switch to “%@”. Select it directly or try again.";
 "inputSource.switchUnconfirmed" = "macOS accepted “%@” but still reports another input source. The front app may need focus.";
 "settings.popup.order.inputSource" = "Input Source";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "Fan";
+"fan.daemonOffline" = "Fan daemon offline — install or start FanCtl to show fan status.";
+"fan.mode.auto" = "Auto";
+"fan.mode.quiet" = "Quiet";
+"fan.mode.performance" = "Performance";
+"fan.mode.curve" = "Curve";
+"fan.mode.manual" = "Manual";
+"fan.managedExternally" = "Managed elsewhere (%@)";
+"fan.controlFault" = "Fan control fault";
 "settings.popup.volumeScroll.group" = "Panel Scrolling";
 "settings.popup.volumeScroll" = "Adjust Volume by Scrolling";
 "settings.popup.volumeScroll.description" = "Scroll inside the status panel to change the output volume.";

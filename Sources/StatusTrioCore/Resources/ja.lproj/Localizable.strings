@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "「%@」に切り替えられませんでした。直接選択するか、もう一度お試しください。";
 "inputSource.switchUnconfirmed" = "macOS は「%@」を受け付けましたが、現在の入力ソースは別のままです。最前面のアプリにフォーカスが必要な場合があります。";
 "settings.popup.order.inputSource" = "入力ソース";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "ファン";
+"fan.daemonOffline" = "ファンデーモンが停止しています。FanCtl をインストールまたは起動してください。";
+"fan.mode.auto" = "自動";
+"fan.mode.quiet" = "静音";
+"fan.mode.performance" = "パフォーマンス";
+"fan.mode.curve" = "カーブ";
+"fan.mode.manual" = "手動";
+"fan.managedExternally" = "外部で管理中（%@）";
+"fan.controlFault" = "ファン制御の故障";
 "settings.popup.volumeScroll.group" = "パネルのスクロール";
 "settings.popup.volumeScroll" = "スクロールで音量を調整";
 "settings.popup.volumeScroll.description" = "ステータスパネル内をスクロールすると出力音量を変更できます。";

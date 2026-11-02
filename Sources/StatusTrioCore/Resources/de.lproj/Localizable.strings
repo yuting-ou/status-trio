@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "Wechsel zu „%@“ nicht möglich. Wähle sie direkt aus oder versuche es erneut.";
 "inputSource.switchUnconfirmed" = "macOS hat „%@“ akzeptiert, meldet aber weiterhin eine andere Eingabequelle. Die vorderste App braucht möglicherweise den Fokus.";
 "settings.popup.order.inputSource" = "Eingabequelle";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "Lüfter";
+"fan.daemonOffline" = "Lüfter-Daemon offline — FanCtl installieren oder starten.";
+"fan.mode.auto" = "Automatisch";
+"fan.mode.quiet" = "Leise";
+"fan.mode.performance" = "Leistung";
+"fan.mode.curve" = "Kurve";
+"fan.mode.manual" = "Manuell";
+"fan.managedExternally" = "Extern verwaltet (%@)";
+"fan.controlFault" = "Lüftersteuerung gestört";
 "settings.popup.volumeScroll.group" = "Panel-Scrollen";
 "settings.popup.volumeScroll" = "Lautstärke durch Scrollen ändern";
 "settings.popup.volumeScroll.description" = "Im Statusbereich scrollen, um die Ausgabelautstärke zu ändern.";

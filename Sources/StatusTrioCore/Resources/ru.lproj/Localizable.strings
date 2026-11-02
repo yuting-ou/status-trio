@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "Не удалось переключиться на «%@». Выберите его напрямую или повторите попытку.";
 "inputSource.switchUnconfirmed" = "macOS приняла «%@», но по-прежнему сообщает о другом источнике ввода. Возможно, активному приложению нужен фокус.";
 "settings.popup.order.inputSource" = "Источник ввода";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "Вентилятор";
+"fan.daemonOffline" = "Демон вентилятора не запущен — установите или запустите FanCtl.";
+"fan.mode.auto" = "Авто";
+"fan.mode.quiet" = "Тихий";
+"fan.mode.performance" = "Производительность";
+"fan.mode.curve" = "Кривая";
+"fan.mode.manual" = "Вручную";
+"fan.managedExternally" = "Управляется извне (%@)";
+"fan.controlFault" = "Сбой управления вентилятором";
 "settings.popup.volumeScroll.group" = "Прокрутка панели";
 "settings.popup.volumeScroll" = "Регулировать громкость прокруткой";
 "settings.popup.volumeScroll.description" = "Прокручивайте внутри панели состояния, чтобы изменить громкость вывода.";

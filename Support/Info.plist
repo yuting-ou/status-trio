@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Modified by the Status Trio Fan fork (Sparkle feed + signing key point at the fork); see NOTICE. -->
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
@@ -41,8 +42,8 @@
 	<key>SUEnableInstallerLauncherService</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/lingyired/status-trio/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/yuting-ou/status-trio/fan-section/appcast-fan.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>N5FLwhXCzo7Z/8z3lOWbOJ7aW04hvXxI7LUk+6f+yDQ=</string>
+	<string>nAwXMrLRKkvAOP8lDWbIX9DVvcmP2fXuwL7paxKX54o=</string>
 </dict>
 </plist>

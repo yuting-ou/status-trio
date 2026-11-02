@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 import AppKit
 import Combine
 import Foundation
@@ -148,9 +149,9 @@ final class SettingsStore: ObservableObject {
     /// Default order of the status-panel sections. Display brightness sits below
     /// the audio-input row so the two device-level controls stay together.
     static let defaultPopupSectionOrder: [PopupSection] = [
-        .battery, .network, .vpn, .bluetooth, .volume, .audioInput, .brightness, .inputSource
+        .battery, .network, .vpn, .bluetooth, .volume, .audioInput, .brightness, .inputSource, .fan
     ]
-    static let defaultEnabledPopupSections: Set<PopupSection> = [.battery, .network, .vpn, .volume]
+    static let defaultEnabledPopupSections: Set<PopupSection> = [.battery, .network, .vpn, .volume, .fan]
     /// Set once the VPN row has been offered to a stored section list.
     ///
     /// `defaultEnabledPopupSections` only reaches a user who has never saved

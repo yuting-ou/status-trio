@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Modified by the Status Trio Fan fork (adds MOBILE_BATTERY build flag); see NOTICE.
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,6 +16,11 @@ DEVELOPMENT_CODENAME="${DEVELOPMENT_CODENAME:-}"
 UNIVERSAL_BUILD="${UNIVERSAL_BUILD:-0}"
 TELEMETRY_PRODUCTION="${TELEMETRY_PRODUCTION:-0}"
 PRIVILEGED_HELPER="${PRIVILEGED_HELPER:-1}"
+# 0 skips the iOS-device battery helper and its bundled dependency tree. The
+# helper's build needs GNU autoconf/automake (not present on every dev machine)
+# and is unrelated to the menu-bar fan work; the app detects the missing
+# helper at runtime and hides the mobile-battery rows.
+MOBILE_BATTERY="${MOBILE_BATTERY:-1}"
 
 case "$OPEN_APP" in
     open|no-open) ;;
@@ -127,6 +133,7 @@ ditto "$SPARKLE_FRAMEWORK_SOURCE" "$CONTENTS/Frameworks/Sparkle.framework"
 
 # The mobile-device helper is built from exact upstream commits. Its runtime
 # dependency graph is packaged into the app so users do not need Homebrew.
+if [[ "$MOBILE_BATTERY" == "1" ]]; then
 build_phase mobile-battery-total
 bash "$ROOT/scripts/build-mobile-battery-helper.sh"
 build_phase bundle-assembly-and-icon-assets
@@ -158,6 +165,7 @@ while IFS= read -r -d '' mobile_library; do
     rewrite_mobile_battery_binary "$mobile_library"
 done < <(find "$CONTENTS/Frameworks/MobileBattery" -maxdepth 1 -type f -name '*.dylib*' -print0)
 rewrite_mobile_battery_binary "$CONTENTS/Helpers/StatusTrioMobileBatteryHelper"
+fi
 
 if ! otool -l "$CONTENTS/MacOS/StatusTrio" | grep -Fq 'path @executable_path/../Frameworks'; then
     install_name_tool -add_rpath '@executable_path/../Frameworks' "$CONTENTS/MacOS/StatusTrio"
@@ -374,17 +382,21 @@ fi
 
 build_phase app-codesign
 codesign "${SIGNING_ARGS[@]}" "$CONTENTS/Frameworks/Sparkle.framework"
+if [[ "$MOBILE_BATTERY" == "1" ]]; then
 while IFS= read -r -d '' mobile_library; do
     codesign "${SIGNING_ARGS[@]}" "$mobile_library"
 done < <(find "$CONTENTS/Frameworks/MobileBattery" -maxdepth 1 -type f -name '*.dylib*' -print0)
 codesign "${SIGNING_ARGS[@]}" "$CONTENTS/Helpers/StatusTrioMobileBatteryHelper"
+fi
 if [[ "$PRIVILEGED_HELPER" == "1" ]]; then
     codesign "${SIGNING_ARGS[@]}" "$CONTENTS/Helpers/StatusTrioPowerHelper"
 fi
 codesign "${SIGNING_ARGS[@]}" "$APP_DIR"
 codesign --verify --deep --strict --verbose=2 "$APP_DIR"
 build_phase signed-bundle-contracts
-bash "$ROOT/scripts/verify-mobile-battery-bundle.sh" "$APP_DIR"
+if [[ "$MOBILE_BATTERY" == "1" ]]; then
+    bash "$ROOT/scripts/verify-mobile-battery-bundle.sh" "$APP_DIR"
+fi
 bash "$ROOT/scripts/verify-privileged-helper-bundle.sh" "$APP_DIR"
 
 echo "Built $APP_DIR (bundle id: $BUNDLE_ID)"

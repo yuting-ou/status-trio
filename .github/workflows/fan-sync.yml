@@ -1,0 +1,74 @@
+# Keeps the fan-section patch stack riding on upstream/main.
+#
+# Daily: fetch upstream → rebase fan-section → release build → full test suite
+# → package + EdDSA-sign + update appcast-fan.xml → push branch/tag + release.
+#
+# Hard rule: any failure (rebase conflict, build error, test failure) aborts
+# the run and opens/updates a GitHub issue. No run ever publishes a package
+# that skipped a step. See scripts/fan-sync.sh for the exit-code contract.
+name: fan-sync
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # daily 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: fan-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fan-section
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "fan-sync-bot"
+          git config user.email "fan-sync-bot@users.noreply.github.com"
+
+      - name: Materialize Sparkle EdDSA private key
+        run: |
+          mkdir -p .build/fan-keys
+          printf '%s' "${SPARKLE_EDDSA_PRIVATE_KEY}" | base64 -D > .build/fan-keys/eddsa.pem
+          chmod 600 .build/fan-keys/eddsa.pem
+        env:
+          SPARKLE_EDDSA_PRIVATE_KEY: ${{ secrets.SPARKLE_EDDSA_PRIVATE_KEY }}
+
+      - name: Sync from upstream (rebase → build → test → publish)
+        env:
+          SPARKLE_PRIVATE_KEY_FILE: ${{ github.workspace }}/.build/fan-keys/eddsa.pem
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/fan-sync.sh --ci 2>&1 | tee fan-sync.log
+
+      - name: Alarm on failure (issue, never silent)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CONFLICTS="$(grep '^FAN_SYNC_CONFLICT_FILES=' fan-sync.log | cut -d= -f2- || true)"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TITLE="fan-sync failed: ${CONFLICTS:+rebase conflict}${CONFLICTS:-build/test/env error}"
+          BODY=$'The daily upstream sync failed and **nothing was published**.\n\n'
+          BODY+="Run: ${RUN_URL}"$'\n\n'
+          if [ -n "$CONFLICTS" ]; then
+            BODY+="Rebase conflicts in: \`${CONFLICTS}\`"$'\n\n'
+            BODY+="Resolve by hand: fetch upstream, rebase fan-section, push, then re-run this workflow."
+          else
+            BODY+='```\n'"$(tail -n 60 fan-sync.log)"$'\n```'
+          fi
+          EXISTING="$(gh issue list --state open --search 'in:title "fan-sync failed"' --limit 1 --json number --jq '.[0].number' || true)"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+          exit 1

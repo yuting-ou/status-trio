@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "Impossible de passer à « %@ ». Sélectionnez-la directement ou réessayez.";
 "inputSource.switchUnconfirmed" = "macOS a accepté « %@ » mais signale toujours une autre source de saisie. L’app au premier plan doit peut-être être activée.";
 "settings.popup.order.inputSource" = "Source de saisie";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "Ventilateur";
+"fan.daemonOffline" = "Démon du ventilateur hors ligne — installez ou démarrez FanCtl.";
+"fan.mode.auto" = "Auto";
+"fan.mode.quiet" = "Silencieux";
+"fan.mode.performance" = "Performance";
+"fan.mode.curve" = "Courbe";
+"fan.mode.manual" = "Manuel";
+"fan.managedExternally" = "Géré ailleurs (%@)";
+"fan.controlFault" = "Défaut de contrôle du ventilateur";
 "settings.popup.volumeScroll.group" = "Défilement du panneau";
 "settings.popup.volumeScroll" = "Régler le volume en défilant";
 "settings.popup.volumeScroll.description" = "Faites défiler dans le panneau d’état pour changer le volume de sortie.";

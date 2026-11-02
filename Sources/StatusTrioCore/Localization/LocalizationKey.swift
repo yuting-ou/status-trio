@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case guideTitle = "guide.title"
     case guideOpen = "guide.open"
@@ -90,6 +91,15 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case settingsPopupOrderBrightness = "settings.popup.order.brightness"
     case settingsPopupOrderAudioInput = "settings.popup.order.audioInput"
     case settingsPopupOrderInputSource = "settings.popup.order.inputSource"
+    case settingsPopupOrderFan = "settings.popup.order.fan"
+    case fanDaemonOffline = "fan.daemonOffline"
+    case fanModeAuto = "fan.mode.auto"
+    case fanModeQuiet = "fan.mode.quiet"
+    case fanModePerformance = "fan.mode.performance"
+    case fanModeCurve = "fan.mode.curve"
+    case fanModeManual = "fan.mode.manual"
+    case fanManagedExternally = "fan.managedExternally"
+    case fanControlFault = "fan.controlFault"
     case brightnessRowAccessibility = "brightness.row.accessibility"
     case brightnessRowAccessibilityUnavailable = "brightness.row.accessibilityUnavailable"
     case brightnessUnavailable = "brightness.unavailable"

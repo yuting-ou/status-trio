@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "تعذّر التبديل إلى «%@». اختره مباشرة أو حاول مرة أخرى.";
 "inputSource.switchUnconfirmed" = "قبل macOS «%@» لكنه لا يزال يُبلّغ عن مصدر إدخال آخر. قد يحتاج التطبيق في المقدمة إلى التركيز.";
 "settings.popup.order.inputSource" = "مصدر الإدخال";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "المروحة";
+"fan.daemonOffline" = "خدمة المروحة غير متصلة — ثبّت أو شغّل FanCtl.";
+"fan.mode.auto" = "تلقائي";
+"fan.mode.quiet" = "هادئ";
+"fan.mode.performance" = "الأداء";
+"fan.mode.curve" = "المنحنى";
+"fan.mode.manual" = "يدوي";
+"fan.managedExternally" = "يُدار خارجيًا (%@)";
+"fan.controlFault" = "عطل في التحكم بالمروحة";
 "settings.popup.volumeScroll.group" = "تمرير اللوحة";
 "settings.popup.volumeScroll" = "ضبط مستوى الصوت بالتمرير";
 "settings.popup.volumeScroll.description" = "مرّر داخل لوحة الحالة لتغيير مستوى صوت الإخراج.";

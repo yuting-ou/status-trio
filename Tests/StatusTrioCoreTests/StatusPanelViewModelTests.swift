@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 import Combine
 import CoreAudio
 import XCTest
@@ -687,7 +688,7 @@ struct AirPodsDiscoveryTriggerTests {
         fixture.settings.setPopupSection(.volume, enabled: false)
         #expect(
             fixture.settings.visiblePopupSections
-                == [.battery, .network, .vpn, .bluetooth]
+                == [.battery, .network, .vpn, .bluetooth, .fan]
         )
         let panel = fixture.makePanel()
         panel.start()

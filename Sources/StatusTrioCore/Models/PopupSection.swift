@@ -1,3 +1,4 @@
+// Modified by the Status Trio Fan fork (adds the FanCtl fan section); see NOTICE.
 import Foundation
 
 enum PopupSection: String, CaseIterable, Identifiable, Sendable {
@@ -9,6 +10,7 @@ enum PopupSection: String, CaseIterable, Identifiable, Sendable {
     case brightness
     case audioInput
     case inputSource
+    case fan
 
     var id: Self { self }
 
@@ -22,6 +24,7 @@ enum PopupSection: String, CaseIterable, Identifiable, Sendable {
         case .brightness: .settingsPopupOrderBrightness
         case .audioInput: .settingsPopupOrderAudioInput
         case .inputSource: .settingsPopupOrderInputSource
+        case .fan: .settingsPopupOrderFan
         }
     }
 
@@ -35,6 +38,7 @@ enum PopupSection: String, CaseIterable, Identifiable, Sendable {
         case .brightness: SymbolFallback.name("sun.max", "sun.max")
         case .audioInput: "mic"
         case .inputSource: "keyboard"
+        case .fan: SymbolFallback.name("fan", "wind")
         }
     }
 }

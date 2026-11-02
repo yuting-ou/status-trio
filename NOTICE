@@ -1,2 +1,18 @@
 Status Trio
 Copyright 2026 lingyired
+
+---
+
+Status Trio Fan (fork)
+Copyright 2026 yuting-ou
+
+This fork adds a fan-status section to the status popover, bridged to the
+separately installed FanCtl (清风) root daemon via its file-based contract
+(/Library/Application Support/FanCtl/{status.json,config.json}); it contains
+no fan-control algorithm of its own. It also adds an alternate Sparkle feed
+and signing key, a MOBILE_BATTERY build flag, and an upstream-sync workflow.
+
+Modified files (Apache-2.0 §4(b) notice): see git history on branch
+"fan-section" at https://github.com/yuting-ou/status-trio — every file this
+fork changed carries a "Modified by the Status Trio Fan fork" header comment.
+Upstream source: https://github.com/lingyired/status-trio (Apache-2.0).

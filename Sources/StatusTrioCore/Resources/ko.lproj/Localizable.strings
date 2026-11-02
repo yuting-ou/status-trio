@@ -368,6 +368,16 @@
 "inputSource.switchFailed" = "‘%@’(으)로 전환하지 못했습니다. 직접 선택하거나 다시 시도하십시오.";
 "inputSource.switchUnconfirmed" = "macOS가 ‘%@’을(를) 수락했지만 현재 입력 소스는 다른 항목입니다. 최전면 앱에 포커스가 필요할 수 있습니다.";
 "settings.popup.order.inputSource" = "입력 소스";
+// Modified by the Status Trio Fan fork: the fan keys below are fork additions.
+"settings.popup.order.fan" = "팬";
+"fan.daemonOffline" = "팬 데몬이 꺼져 있습니다. FanCtl을 설치하거나 시작하세요.";
+"fan.mode.auto" = "자동";
+"fan.mode.quiet" = "저소음";
+"fan.mode.performance" = "성능";
+"fan.mode.curve" = "곡선";
+"fan.mode.manual" = "수동";
+"fan.managedExternally" = "외부에서 관리 중(%@)";
+"fan.controlFault" = "팬 제어 오류";
 "settings.popup.volumeScroll.group" = "패널 스크롤";
 "settings.popup.volumeScroll" = "스크롤로 볼륨 조절";
 "settings.popup.volumeScroll.description" = "상태 패널 안에서 스크롤하면 출력 볼륨이 바뀝니다.";
