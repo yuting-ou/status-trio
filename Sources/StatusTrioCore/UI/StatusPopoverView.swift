@@ -194,10 +194,7 @@ struct StatusPopoverView: View {
                 onOpenKeyboardSettings: openKeyboardSettings
             )
         case .fan:
-            FanStatusView(
-                monitor: panel.fanMonitor,
-                onSetMode: { panel.fanMonitor.apply($0) }
-            )
+            FanStatusView(monitor: panel.fanMonitor)
         }
     }
 

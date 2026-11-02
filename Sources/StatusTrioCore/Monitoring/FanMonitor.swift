@@ -14,21 +14,92 @@ import Foundation
 /// - `/Library/Application Support/FanCtl/config.json` — UI → daemon, picked up
 ///   through the daemon's DispatchSource file watch with a 30 ms debounce.
 ///   Unknown keys are preserved by read-modify-write so FanCtl's own app stays
-///   a co-owner of the file.
-enum FanControlMode: String, CaseIterable, Identifiable, Sendable {
-    case auto
-    case quiet
-    case performance
+///   a co-owner of the file. Every value the UI can emit stays inside the
+///   domain the daemon's `sanitized()` accepts, so a shown value can never be
+///   rewritten by the daemon's clamps.
+enum FanModeChoice: String, CaseIterable, Identifiable, Sendable {
+    case auto, curve, ai, manual
 
     var id: Self { self }
 
     var titleKey: LocalizationKey {
         switch self {
         case .auto: .fanModeAuto
-        case .quiet: .fanModeQuiet
-        case .performance: .fanModePerformance
+        case .curve: .fanModeCurve
+        case .ai: .fanModeAI
+        case .manual: .fanModeManual
         }
     }
+}
+
+/// FanCtl's factory curve presets (SMCCore/Config.swift CurvePreset.points) —
+/// the exact payloads the 清风 app writes when its own preset is picked.
+enum FanCurveChoice: String, CaseIterable, Identifiable, Sendable {
+    case quiet, balanced, aggressive
+
+    var id: Self { self }
+
+    var titleKey: LocalizationKey {
+        switch self {
+        case .quiet: .fanPresetQuiet
+        case .balanced: .fanPresetBalanced
+        case .aggressive: .fanPresetAggressive
+        }
+    }
+
+    var points: [[String: Double]] {
+        switch self {
+        case .quiet:
+            return [["temp": 55, "percent": 0], ["temp": 66, "percent": 12],
+                    ["temp": 75, "percent": 35], ["temp": 83, "percent": 65],
+                    ["temp": 89, "percent": 100]]
+        case .balanced:
+            return [["temp": 52, "percent": 0], ["temp": 62, "percent": 20],
+                    ["temp": 70, "percent": 45], ["temp": 78, "percent": 72],
+                    ["temp": 85, "percent": 100]]
+        case .aggressive:
+            return [["temp": 48, "percent": 0], ["temp": 58, "percent": 32],
+                    ["temp": 66, "percent": 60], ["temp": 74, "percent": 85],
+                    ["temp": 80, "percent": 100]]
+        }
+    }
+
+    /// config.json may carry a preset label whose materialized curve no longer
+    /// matches the factory points (user-tuned or AI-personalized). Showing the
+    /// preset as selected in that state would be a lie, so selection requires
+    /// both the label and the points to agree.
+    func matches(curve: [[String: Any]]) -> Bool {
+        guard curve.count == points.count else { return false }
+        for (actual, expected) in zip(curve, points) {
+            guard let t = actual["temp"] as? Double, let p = actual["percent"] as? Double,
+                  abs(t - expected["temp"]!) < 0.51, abs(p - expected["percent"]!) < 0.51
+            else { return false }
+        }
+        return true
+    }
+}
+
+/// FanCtl's AI target-temperature gears (FanCtlApp/PanelModes.swift:420-421).
+enum FanAITargetChoice: Double, CaseIterable, Identifiable, Sendable {
+    case performance = 72
+    case balanced = 76
+    case quiet = 80
+
+    var id: Self { self }
+
+    var titleKey: LocalizationKey {
+        switch self {
+        case .performance: .fanModePerformance
+        case .balanced: .fanPresetBalanced
+        case .quiet: .fanPresetQuiet
+        }
+    }
+}
+
+/// Hardware RPM bounds of one fan, read from status.json (never hardcoded).
+struct FanRPMRange: Equatable, Sendable {
+    var min: Double
+    var max: Double
 }
 
 struct FanPanelState: Equatable, Sendable {
@@ -38,50 +109,67 @@ struct FanPanelState: Equatable, Sendable {
     var cpuTemp: Double?
     var gpuTemp: Double?
     var ssdTemp: Double?
+    var powerWatts: Double?
+    var envTemp: Double?
     /// Actual RPM per fan, in fan-id order.
     var fanRPMs: [Double] = []
-    /// Raw daemon mode ("auto" / "curve" / "ai" / "manual"), for the caption.
+    /// Daemon-computed target RPM per fan (status.json is the only honest source:
+    /// percent→RPM mapping lives in the daemon, Fans.swift).
+    var fanTargetRPMs: [Double] = []
+    /// Hardware RPM bounds per fan from status.json — the manual slider's range
+    /// annotation. The slider itself works in the daemon's own 0...100 percent
+    /// domain, so no UI value can ever be clamped.
+    var fanRanges: [FanRPMRange] = []
+    /// Raw daemon mode ("auto" / "curve" / "ai" / "manual") and control reason
+    /// (auto/curve/ai/aiIdle/manual/battery/night/batteryHot/quiet/ssd/failsafe).
     var modeRaw: String?
+    var reasonRaw: String?
+    /// The learned-map value for the current temperature (decisionTrace.learned),
+    /// display only.
+    var aiLearnedPercent: Double?
     /// SMC write closed-loop failure reported by the daemon.
     var controlFault = false
-    /// Which of our three commands the current config.json maps to, if any.
-    /// nil = the config was shaped elsewhere (AI target, custom preset, manual
-    /// percent…) and the segmented control shows no selection instead of lying.
-    var selection: FanControlMode?
+
+    // Config-derived selections (what the controls point at).
+    var modeSelection: FanModeChoice?
+    var curveSelection: FanCurveChoice?
+    /// True when config says preset=X but the materialized points differ —
+    /// the preset row shows no selection and the "custom curve" caption instead.
+    var curveIsCustom = false
+    var aiTargetSelection: FanAITargetChoice?
+    /// The raw aiTargetTemp when it is none of the three gears (shown as caption).
+    var aiTargetRaw: Double?
+    var manualPercent: Double?
 }
 
 @MainActor
 final class FanMonitor: ObservableObject {
     @Published private(set) var state = FanPanelState()
 
-    private let directory: URL
     private let statusURL: URL
     private let configURL: URL
     private var sources: [DispatchSourceFileSystemObject] = []
     private var fallbackTimer: DispatchSourceTimer?
+    /// Slider drags produce a stream of values; the daemon already debounces
+    /// config events at 30 ms, and FanCtl's own app debounces slider writes at
+    /// 80 ms — we hold 100 ms so a drag costs one write, not thirty.
+    private var pendingManualWrite: Task<Void, Never>?
+
+    /// The daemon clamps manualPercent to exactly this range
+    /// (FanConfig.sanitized); the slider must span the same domain — wider
+    /// would show values the daemon rewrites, narrower would hide gears.
+    /// Single source of truth for the view's Slider bounds and this clamp.
+    static let manualPercentRange: ClosedRange<Double> = 0...100
 
     /// Newer than this and the daemon is considered alive; mirrors fanprobe's
     /// freshness bound (daemon writes at least every 10 s, 30 s = missed three).
     private static let stalenessWindow: TimeInterval = 30
     private static let fallbackInterval: TimeInterval = 10
+    private static let manualWriteDebounce: TimeInterval = 0.1
     /// Main-queue only (both call sites), so the shared formatter needs no lock.
     private static let iso8601 = ISO8601DateFormatter()
 
-    /// FanCtl's factory curves (SMCCore/Config.swift CurvePreset.points), the
-    /// exact payloads the 清风 app itself writes when its own preset is picked.
-    private static let quietCurve: [[String: Double]] = [
-        ["temp": 55, "percent": 0], ["temp": 66, "percent": 12],
-        ["temp": 75, "percent": 35], ["temp": 83, "percent": 65],
-        ["temp": 89, "percent": 100],
-    ]
-    private static let aggressiveCurve: [[String: Double]] = [
-        ["temp": 48, "percent": 0], ["temp": 58, "percent": 32],
-        ["temp": 66, "percent": 60], ["temp": 74, "percent": 85],
-        ["temp": 80, "percent": 100],
-    ]
-
     init(directory: URL = URL(fileURLWithPath: "/Library/Application Support/FanCtl")) {
-        self.directory = directory
         statusURL = directory.appendingPathComponent("status.json")
         configURL = directory.appendingPathComponent("config.json")
     }
@@ -105,6 +193,8 @@ final class FanMonitor: ObservableObject {
     }
 
     func stop() {
+        pendingManualWrite?.cancel()
+        pendingManualWrite = nil
         sources.forEach { $0.cancel() }
         sources.removeAll()
         fallbackTimer?.cancel()
@@ -119,39 +209,64 @@ final class FanMonitor: ObservableObject {
 
     // MARK: - Control (UI → daemon)
 
-    /// Write one of the three supported intents into config.json and let the
-    /// daemon execute it. Read-modify-write: every key we do not own (custom
-    /// curves, quiet-hours, AI target, offsets, boost deadlines) round-trips
-    /// untouched, and the daemon's own sanitizers clamp anything we got wrong.
-    ///
-    /// - auto: `mode=auto` — hands fan control back to macOS.
-    /// - quiet / performance: `mode=curve` with FanCtl's factory preset points,
-    ///   matching what the 清风 app writes when its own preset is chosen. This
-    ///   replaces the materialized `curve` array; users of a hand-tuned curve
-    ///   keep it only if they stay on FanCtl's own UI.
+    /// Switch the daemon mode, preserving every other key (curve points, AI
+    /// target, manual percent stay where the user left them — same semantics
+    /// as FanCtl's own setMode).
     @discardableResult
-    func apply(_ mode: FanControlMode) -> Bool {
-        // Bail out when the existing config cannot be read as an object. The
-        // daemon's FanConfig has required keys (manualPercent, curve); writing
-        // a partial document would decode-fail on the daemon and silently drop
-        // the user's intent (it falls back to last-good). Refusing is louder
-        // and safer: the UI keeps showing the previous selection.
+    func setMode(_ mode: FanModeChoice) -> Bool {
+        writeConfig { $0["mode"] = mode.rawValue }
+    }
+
+    /// Pick a factory curve preset: mode=curve + preset + materialized points,
+    /// exactly what the 清风 app writes on a preset pick.
+    @discardableResult
+    func setCurvePreset(_ preset: FanCurveChoice) -> Bool {
+        writeConfig {
+            $0["mode"] = "curve"
+            $0["preset"] = preset.rawValue
+            $0["curve"] = preset.points
+        }
+    }
+
+    /// Pick an AI target temperature: mode=ai + aiTargetTemp.
+    @discardableResult
+    func setAITarget(_ target: FanAITargetChoice) -> Bool {
+        writeConfig {
+            $0["mode"] = "ai"
+            $0["aiTargetTemp"] = target.rawValue
+        }
+    }
+
+    /// Manual fixed speed. The daemon's domain is 0...100 percent
+    /// (Config.swift clamps the same range); the clamp here is defense in
+    /// depth so no caller can ever emit a value the daemon would rewrite.
+    /// Debounced: safe to call on every slider tick.
+    func setManualPercent(_ percent: Double) {
+        let clamped = min(Self.manualPercentRange.upperBound,
+                          max(Self.manualPercentRange.lowerBound,
+                              percent.isFinite ? percent : Self.manualPercentRange.lowerBound))
+        pendingManualWrite?.cancel()
+        pendingManualWrite = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.manualWriteDebounce * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            self.writeConfig {
+                $0["mode"] = "manual"
+                $0["manualPercent"] = clamped
+            }
+        }
+    }
+
+    /// Read-modify-write with an atomic same-directory replace. Bails out when
+    /// the existing config cannot be read as an object: a partial write would
+    /// decode-fail at the daemon (manualPercent/curve are required FanConfig
+    /// keys) and silently drop the user's intent.
+    @discardableResult
+    private func writeConfig(_ mutate: (inout [String: Any]) -> Void) -> Bool {
         guard let configData = try? Data(contentsOf: configURL),
               var config = (try? JSONSerialization.jsonObject(with: configData))
                 as? [String: Any]
         else { return false }
-        switch mode {
-        case .auto:
-            config["mode"] = "auto"
-        case .quiet:
-            config["mode"] = "curve"
-            config["preset"] = "quiet"
-            config["curve"] = Self.quietCurve
-        case .performance:
-            config["mode"] = "curve"
-            config["preset"] = "aggressive"
-            config["curve"] = Self.aggressiveCurve
-        }
+        mutate(&config)
         guard let data = try? JSONSerialization.data(
             withJSONObject: config, options: [.prettyPrinted, .sortedKeys]
         ) else { return false }
@@ -198,17 +313,42 @@ final class FanMonitor: ObservableObject {
             next.gpuTemp = plausible(sensors["gpuDie"])
             next.ssdTemp = plausible(sensors["ssd"])
         }
+        next.powerWatts = plausible(status["powerWatts"])
+        next.envTemp = plausible(status["envTemp"])
         if let fans = status["fans"] as? [[String: Any]] {
-            next.fanRPMs = fans
-                .sorted { ($0["id"] as? Int ?? 0) < ($1["id"] as? Int ?? 0) }
-                .compactMap { $0["actualRPM"] as? Double }
+            let ordered = fans.sorted { ($0["id"] as? Int ?? 0) < ($1["id"] as? Int ?? 0) }
+            next.fanRPMs = ordered.compactMap { $0["actualRPM"] as? Double }
+            next.fanTargetRPMs = ordered.compactMap { $0["targetRPM"] as? Double }
+            next.fanRanges = ordered.compactMap { fan in
+                guard let lo = fan["minRPM"] as? Double, let hi = fan["maxRPM"] as? Double,
+                      lo.isFinite, hi.isFinite, hi > lo else { return nil }
+                return FanRPMRange(min: lo, max: hi)
+            }
         }
         next.modeRaw = status["mode"] as? String
+        next.reasonRaw = status["reason"] as? String
+        if let trace = status["decisionTrace"] as? [String: Any] {
+            next.aiLearnedPercent = plausible(trace["learned"])
+        }
         next.controlFault = status["controlFault"] as? Bool ?? false
 
         if let configData = try? Data(contentsOf: configURL),
            let config = try? JSONSerialization.jsonObject(with: configData) as? [String: Any] {
-            next.selection = selection(from: config)
+            next.modeSelection = (config["mode"] as? String).flatMap(FanModeChoice.init(rawValue:))
+            if let presetRaw = config["preset"] as? String,
+               let preset = FanCurveChoice(rawValue: presetRaw),
+               let curve = config["curve"] as? [[String: Any]] {
+                next.curveSelection = preset.matches(curve: curve) ? preset : nil
+                next.curveIsCustom = next.curveSelection == nil
+            }
+            if let target = config["aiTargetTemp"] as? Double, target.isFinite {
+                next.aiTargetRaw = target
+                next.aiTargetSelection = FanAITargetChoice.allCases
+                    .first { abs($0.rawValue - target) < 0.5 }
+            }
+            if let manual = config["manualPercent"] as? Double, manual.isFinite {
+                next.manualPercent = min(100, max(0, manual))
+            }
         }
         return next
     }
@@ -218,21 +358,6 @@ final class FanMonitor: ObservableObject {
     private static func plausible(_ value: Any?) -> Double? {
         guard let v = value as? Double, v.isFinite, v > 0, v < 150 else { return nil }
         return v
-    }
-
-    private static func selection(from config: [String: Any]) -> FanControlMode? {
-        switch config["mode"] as? String {
-        case "auto":
-            return .auto
-        case "curve":
-            switch config["preset"] as? String {
-            case "quiet": return .quiet
-            case "aggressive": return .performance
-            default: return nil
-            }
-        default:
-            return nil
-        }
     }
 
     // MARK: - File watching
