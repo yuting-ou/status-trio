@@ -400,8 +400,9 @@
 "fan.side.fan" = "ファン";
 "fan.manual.zero" = "0% = 最低回転 · 100% = 全速";
 "fan.failsafeNote" = "92°C 以上で自動的に全速";
-"fan.learnedAirflow" = "学習した風量";
 "fan.learnedAirflow.help" = "現在の温度を維持するためにこのマシンが学習した必要風量";
+"fan.learnedAirflow.line" = "現在の温度を保つ自学習の風量 %d%%";
+"fan.aiTargetHint" = "目標温度が高いほど静か";
 "fan.fault.sensorUnavailable" = "温度センサー利用不可";
 "fan.fault.sensorImplausible" = "温度読み取りが固着";
 "fan.fault.sensorBelowAmbient" = "温度読み取りが環境以下";

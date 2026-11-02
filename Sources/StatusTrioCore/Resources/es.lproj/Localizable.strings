@@ -400,8 +400,9 @@
 "fan.side.fan" = "Vent. ";
 "fan.manual.zero" = "0 % = velocidad mínima · 100 % = máxima";
 "fan.failsafeNote" = "Por encima de 92 °C el demonio fuerza velocidad máxima";
-"fan.learnedAirflow" = "Ventilación aprendida";
 "fan.learnedAirflow.help" = "Flujo de aire que esta máquina aprendió necesario para mantener la temperatura actual";
+"fan.learnedAirflow.line" = "Ventilación autoaprendida para esta temperatura: %d%%";
+"fan.aiTargetHint" = "Objetivo más alto = más silencio";
 "fan.fault.sensorUnavailable" = "Sensores de temperatura no disponibles";
 "fan.fault.sensorImplausible" = "Lectura de temperatura atascada";
 "fan.fault.sensorBelowAmbient" = "Lectura por debajo del ambiente";

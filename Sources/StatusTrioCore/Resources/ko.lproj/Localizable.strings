@@ -400,8 +400,9 @@
 "fan.side.fan" = "팬";
 "fan.manual.zero" = "0% = 최저 속도 · 100% = 전속";
 "fan.failsafeNote" = "92°C 이상이면 자동 전속";
-"fan.learnedAirflow" = "학습된 풍량";
 "fan.learnedAirflow.help" = "현재 온도를 유지하기 위해 이 기기가 학습한 필요 풍량";
+"fan.learnedAirflow.line" = "현재 온도 유지에 필요한 자기학습 풍량 %d%%";
+"fan.aiTargetHint" = "목표 온도가 높을수록 조용";
 "fan.fault.sensorUnavailable" = "온도 센서 사용 불가";
 "fan.fault.sensorImplausible" = "온도 읽기 고착 의심";
 "fan.fault.sensorBelowAmbient" = "온도 읽기가 주변보다 낮음";

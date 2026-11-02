@@ -82,6 +82,9 @@ enum FanPanelStyle {
             : NSColor(srgbRed: 0.72, green: 0.24, blue: 0.00, alpha: 1)
     })
     static let fault = Color(nsColor: faultNS)
+
+    /// Quick-gear chip resting fill (background, not text — no contrast role).
+    static let chipBackground = Color.secondary.opacity(0.08)
 }
 
 private extension NSAppearance {

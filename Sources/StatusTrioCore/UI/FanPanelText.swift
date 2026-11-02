@@ -26,12 +26,12 @@ enum FanPanelText {
     static func tempsLine(state: FanPanelState) -> String {
         var parts = ["CPU \(temp(state.cpuTemp))", "GPU \(temp(state.gpuTemp))"]
         if let ssd = state.ssdTemp { parts.append("SSD \(temp(ssd))") }
-        return parts.joined(separator: "  ·  ")
+        return parts.joined(separator: " · ")
     }
 
     private static func temp(_ value: Double?) -> String {
         guard let value else { return "—" }
-        return "\(Int(value.rounded()))°"
+        return "\(Int(value.rounded()))°C"
     }
 
     /// Actual RPM per fan with explicit side labels. Placeholder rules (the

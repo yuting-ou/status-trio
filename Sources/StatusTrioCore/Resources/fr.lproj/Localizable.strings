@@ -400,8 +400,9 @@
 "fan.side.fan" = "Ventil. ";
 "fan.manual.zero" = "0 % = vitesse mini · 100 % = pleine vitesse";
 "fan.failsafeNote" = "Au-delà de 92 °C, le démon force la pleine vitesse";
-"fan.learnedAirflow" = "Ventilation apprise";
 "fan.learnedAirflow.help" = "Flux d'air que cette machine a appris nécessaire pour tenir la température actuelle";
+"fan.learnedAirflow.line" = "Ventilation auto-apprise pour tenir cette température : %d%%";
+"fan.aiTargetHint" = "Cible plus haute = plus silencieux";
 "fan.fault.sensorUnavailable" = "Capteurs de température indisponibles";
 "fan.fault.sensorImplausible" = "Lecture de température figée";
 "fan.fault.sensorBelowAmbient" = "Lecture sous la température ambiante";

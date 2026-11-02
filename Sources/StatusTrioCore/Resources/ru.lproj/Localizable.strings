@@ -400,8 +400,9 @@
 "fan.side.fan" = "Вент. ";
 "fan.manual.zero" = "0% = мин. скорость · 100% = полный ход";
 "fan.failsafeNote" = "Выше 92 °C демон принудительно включает полный ход";
-"fan.learnedAirflow" = "Изученный обдув";
 "fan.learnedAirflow.help" = "Обдув, который эта машина по опыту считает нужным для удержания текущей температуры";
+"fan.learnedAirflow.line" = "Изученный обдув для текущей температуры: %d%%";
+"fan.aiTargetHint" = "Выше целевая температура = тише";
 "fan.fault.sensorUnavailable" = "Датчики температуры недоступны";
 "fan.fault.sensorImplausible" = "Показания температуры застряли";
 "fan.fault.sensorBelowAmbient" = "Показания ниже окружающей";

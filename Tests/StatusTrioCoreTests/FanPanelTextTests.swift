@@ -27,6 +27,17 @@ struct FanPanelTextTests {
 
     // MARK: - ③ Side-labeled RPM values
 
+    /// D12/D13: one temperature unit style (°C everywhere) and one separator.
+    @Test func tempsLineUsesCelsiusSuffixAndSingleSeparator() {
+        var s = twoFanState()
+        s.cpuTemp = 63.4
+        s.gpuTemp = 51.2
+        s.ssdTemp = 38.9
+        #expect(FanPanelText.tempsLine(state: s) == "CPU 63°C · GPU 51°C · SSD 39°C")
+        s.cpuTemp = nil
+        #expect(FanPanelText.tempsLine(state: s) == "CPU — · GPU 51°C · SSD 39°C")
+    }
+
     @Test func rpmLineLabelsLeftAndRightFans() {
         let loc = makeLocalization()
         #expect(FanPanelText.rpmLine(state: twoFanState(), localization: loc)

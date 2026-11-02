@@ -400,8 +400,9 @@
 "fan.side.fan" = "مروحة ";
 "fan.manual.zero" = "0% = أدنى سرعة · 100% = أقصى سرعة";
 "fan.failsafeNote" = "فوق 92° يفرض العفريت السرعة القصوى";
-"fan.learnedAirflow" = "تدفق متعلَّم";
 "fan.learnedAirflow.help" = "تدفق الهواء الذي تعلمته هذه الآلة للحفاظ على الحرارة الحالية";
+"fan.learnedAirflow.line" = "تدفق متعلَّم ذاتيًا للحفاظ على هذه الحرارة: %d%%";
+"fan.aiTargetHint" = "هدف أعلى = أهدأ";
 "fan.fault.sensorUnavailable" = "حساسات الحرارة غير متاحة";
 "fan.fault.sensorImplausible" = "قراءة الحرارة متجمدة";
 "fan.fault.sensorBelowAmbient" = "قراءة الحرارة أدنى من المحيط";

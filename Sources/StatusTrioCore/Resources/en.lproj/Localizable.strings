@@ -400,8 +400,9 @@
 "fan.side.fan" = "Fan ";
 "fan.manual.zero" = "0% = minimum speed · 100% = full speed";
 "fan.failsafeNote" = "Above 92°C the daemon forces full speed";
-"fan.learnedAirflow" = "Learned airflow";
 "fan.learnedAirflow.help" = "Airflow this machine has learned it needs to hold the current temperature";
+"fan.learnedAirflow.line" = "Self-taught airflow to hold this temperature: %d%%";
+"fan.aiTargetHint" = "Higher target temperature = quieter";
 "fan.fault.sensorUnavailable" = "Temperature sensors unavailable";
 "fan.fault.sensorImplausible" = "Temperature reading stuck";
 "fan.fault.sensorBelowAmbient" = "Temperature reading below ambient";

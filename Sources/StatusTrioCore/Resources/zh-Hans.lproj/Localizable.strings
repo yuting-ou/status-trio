@@ -400,8 +400,9 @@
 "fan.side.fan" = "风扇";
 "fan.manual.zero" = "0% = 最低转速 · 100% = 全速";
 "fan.failsafeNote" = "高温 92°C 自动全速兜底";
-"fan.learnedAirflow" = "经验风量";
 "fan.learnedAirflow.help" = "当前温度下，本机学习到的维持温度所需风量";
+"fan.learnedAirflow.line" = "稳住当前温度的自学风量 %d%%";
+"fan.aiTargetHint" = "目标温度越高越安静";
 "fan.fault.sensorUnavailable" = "温度传感器不可用";
 "fan.fault.sensorImplausible" = "温度读数疑似失真（卡死）";
 "fan.fault.sensorBelowAmbient" = "温度读数疑似失真（低于环境）";

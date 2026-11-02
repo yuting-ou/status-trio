@@ -400,8 +400,9 @@
 "fan.side.fan" = "Lüfter ";
 "fan.manual.zero" = "0 % = Mindestdrehzahl · 100 % = Vollspeed";
 "fan.failsafeNote" = "Ab 92 °C erzwingt der Daemon Vollspeed";
-"fan.learnedAirflow" = "Gelernte Lüftung";
 "fan.learnedAirflow.help" = "Luftleistung, die dieser Mac zum Halten der aktuellen Temperatur gelernt hat";
+"fan.learnedAirflow.line" = "Selbst gelernte Lüftung für diese Temperatur: %d%%";
+"fan.aiTargetHint" = "Höhere Zieltemperatur = leiser";
 "fan.fault.sensorUnavailable" = "Temperatursensoren nicht verfügbar";
 "fan.fault.sensorImplausible" = "Temperaturwert klemmt";
 "fan.fault.sensorBelowAmbient" = "Temperaturwert unter Umgebung";
