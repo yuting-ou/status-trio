@@ -417,6 +417,7 @@
 "fan.staleData" = "Lüfterdaten veraltet (%d s) — Daemon evtl. gestoppt.";
 "fan.writeFailed" = "Nicht übernommen: Konfiguration konnte nicht geschrieben werden (Rechte prüfen).";
 "fan.badge.caution" = "Lüfter-Hitzeschutz aktiv";
+"fan.actualPrefix" = "Ist";
 "settings.popup.volumeScroll.group" = "Panel-Scrollen";
 "settings.popup.volumeScroll" = "Lautstärke durch Scrollen ändern";
 "settings.popup.volumeScroll.description" = "Im Statusbereich scrollen, um die Ausgabelautstärke zu ändern.";

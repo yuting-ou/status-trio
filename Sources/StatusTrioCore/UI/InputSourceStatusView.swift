@@ -61,7 +61,7 @@ struct InputSourceStatusView: View {
         if let currentName = state.currentName {
             Text(currentName)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FanPanelStyle.caption)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(currentName)

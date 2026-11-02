@@ -17,7 +17,7 @@ struct VPNStatusView: View {
                     .truncationMode(.tail)
                 Text(state.subtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(FanPanelStyle.caption)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }

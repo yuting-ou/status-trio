@@ -70,7 +70,7 @@ struct NetworkStatusView: View {
         } else {
             Text(state.subtitle)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(FanPanelStyle.caption)
                 .lineLimit(1)
                 .truncationMode(isWired ? .middle : .tail)
         }

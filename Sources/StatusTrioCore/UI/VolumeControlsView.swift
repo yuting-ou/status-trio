@@ -69,7 +69,7 @@ struct VolumeControlsView: View {
 
                 Text(percentageText)
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(FanPanelStyle.caption)
                     .frame(minWidth: 34, alignment: .trailing)
                     .accessibilityHidden(true)
 

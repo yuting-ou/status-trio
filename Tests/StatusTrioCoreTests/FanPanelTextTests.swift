@@ -52,8 +52,35 @@ struct FanPanelTextTests {
 
     @Test func rangeNoteLineLabelsEachFansBounds() {
         let loc = makeLocalization()
-        #expect(FanPanelText.rangeNoteLine(state: twoFanState(), localization: loc)
-            == "范围 左 1350–5349 · 右 1458–5777 RPM")
+        // One line per fan: a joined line can wrap between a label and its
+        // value — that is how "右" once got detached from its numbers.
+        #expect(FanPanelText.rangeNoteLines(state: twoFanState(), localization: loc)
+            == ["范围 左 1350–5349 RPM", "范围 右 1458–5777 RPM"])
+    }
+
+    /// Target line is omitted when target == actual (repeating identical
+    /// numbers reads as a bug), shown when they differ — and the readings
+    /// line then spells out 实际 so the two can never be confused.
+    @Test func targetLineOmittedWhenItWouldRepeatTheReadings() {
+        let loc = makeLocalization()
+        var s = twoFanState()
+        // Fixture has target 2464/2661 vs actual 2745/3006 → differs, shown.
+        #expect(FanPanelText.targetRpmLine(state: s, localization: loc) != nil)
+        #expect(FanPanelText.rpmLine(state: s, localization: loc, labelsActual: true)
+            .hasPrefix("实际 "))
+
+        for i in s.fans.indices { s.fans[i].targetRPM = s.fans[i].actualRPM }
+        #expect(FanPanelText.targetRpmLine(state: s, localization: loc) == nil)
+        #expect(FanPanelText.rpmLine(state: s, localization: loc, labelsActual: false)
+            .hasPrefix("实际 ") == false)
+    }
+
+    /// Color is not the only channel: caution and critical differ in shape.
+    @Test func badgeLevelsDifferByShapeNotOnlyHue() {
+        #expect(FanPanelText.FanBadgeState.caution.shape == .ring)
+        #expect(FanPanelText.FanBadgeState.critical.shape == .dot)
+        #expect(FanPanelText.FanBadgeState.caution.shape
+            != FanPanelText.FanBadgeState.critical.shape)
     }
 
     // MARK: - ② Placeholder vs genuine zero
@@ -214,7 +241,7 @@ struct FanPanelTextTests {
                              range: FanRPMRange(min: 1350, max: 5349))]
         #expect(FanPanelText.rpmLine(state: s, localization: loc) == "2745 RPM")
         #expect(FanPanelText.targetRpmLine(state: s, localization: loc) == "目标 2464 RPM")
-        #expect(FanPanelText.rangeNoteLine(state: s, localization: loc)
-            == "范围 1350–5349 RPM")
+        #expect(FanPanelText.rangeNoteLines(state: s, localization: loc)
+            == ["范围 1350–5349 RPM"])
     }
 }

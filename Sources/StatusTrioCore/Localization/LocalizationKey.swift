@@ -139,6 +139,7 @@ enum LocalizationKey: String, CaseIterable, Hashable, Sendable {
     case fanStaleData = "fan.staleData"
     case fanWriteFailed = "fan.writeFailed"
     case fanBadgeCaution = "fan.badge.caution"
+    case fanActualPrefix = "fan.actualPrefix"
     case brightnessRowAccessibility = "brightness.row.accessibility"
     case brightnessRowAccessibilityUnavailable = "brightness.row.accessibilityUnavailable"
     case brightnessUnavailable = "brightness.unavailable"

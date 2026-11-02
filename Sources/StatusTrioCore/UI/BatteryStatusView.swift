@@ -50,7 +50,7 @@ struct BatteryStatusView: View {
                             .monospacedDigit()
                         Text(state.subtitle)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(FanPanelStyle.caption)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }

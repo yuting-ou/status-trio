@@ -417,6 +417,7 @@
 "fan.staleData" = "Datos del ventilador obsoletos (%d s) — el demonio puede haberse detenido.";
 "fan.writeFailed" = "Ajuste no aplicado: no se pudo escribir la configuración (revisa permisos).";
 "fan.badge.caution" = "Protección térmica del ventilador activa";
+"fan.actualPrefix" = "Real";
 "settings.popup.volumeScroll.group" = "Desplazamiento del panel";
 "settings.popup.volumeScroll" = "Ajustar el volumen desplazándose";
 "settings.popup.volumeScroll.description" = "Desplázate dentro del panel de estado para cambiar el volumen de salida.";

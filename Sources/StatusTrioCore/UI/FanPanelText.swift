@@ -38,7 +38,9 @@ enum FanPanelText {
     /// honest daemon semantics): a missing entry or a declared fan-read fault
     /// means "no valid reading" → "—"; a present 0 means the fan is genuinely
     /// stopped and stays a real "0".
-    static func rpmLine(state: FanPanelState, localization: Localization) -> String {
+    static func rpmLine(
+        state: FanPanelState, localization: Localization, labelsActual: Bool = false
+    ) -> String {
         let total = fanCount(state)
         let readFailed = state.faultReasonRaw == "fanStateReadFailed"
         guard total > 0 else { return "— RPM" }
@@ -50,13 +52,14 @@ enum FanPanelText {
             return "\(Int(rpm.rounded()))"
         }
 
+        let actualPrefix = labelsActual ? "\(localization.string(.fanActualPrefix)) " : ""
         if total == 1 {
-            return "\(value(id: state.fans.first?.id ?? 0)) RPM"
+            return actualPrefix + "\(value(id: state.fans.first?.id ?? 0)) RPM"
         }
         let segments = (0..<total).map { id in
             "\(fanLabel(id: id, total: total, localization: localization)) \(value(id: id))"
         }
-        return segments.joined(separator: " · ") + " RPM"
+        return actualPrefix + segments.joined(separator: " · ") + " RPM"
     }
 
     static func powerText(state: FanPanelState) -> String? {
@@ -67,10 +70,18 @@ enum FanPanelText {
     // MARK: - Manual-mode annotation lines
 
     /// Daemon-computed target RPM, side-labeled; "—" where the daemon has no
-    /// target for that fan (e.g. handback).
-    static func targetRpmLine(state: FanPanelState, localization: Localization) -> String {
+    /// target for that fan (e.g. handback). nil when every fan's target
+    /// already equals its actual reading — repeating the same numbers twice
+    /// would read as a display bug, not as information.
+    static func targetRpmLine(state: FanPanelState, localization: Localization) -> String? {
         let total = fanCount(state)
-        guard total > 0 else { return "" }
+        guard total > 0 else { return nil }
+        let allSettled = state.fans.allSatisfy { fan in
+            guard let target = fan.targetRPM, let actual = fan.actualRPM else { return false }
+            return abs(target - actual) < 1
+        }
+        guard !allSettled else { return nil }
+
         func value(id: Int) -> String {
             guard let fan = state.fans.first(where: { $0.id == id }),
                   let rpm = fan.targetRPM else { return "—" }
@@ -87,20 +98,19 @@ enum FanPanelText {
     }
 
     /// RPM bounds per fan, side-labeled, read from status.json — never
-    /// hardcoded. One line, one topic: the range.
-    static func rangeNoteLine(state: FanPanelState, localization: Localization) -> String {
+    /// hardcoded. One line PER FAN: a joined line can wrap between a label
+    /// and its value, which is exactly how "右" once ended up detached from
+    /// its numbers on screen. Short lines that can never split mid-pair.
+    static func rangeNoteLines(state: FanPanelState, localization: Localization) -> [String] {
         let prefix = localization.string(.fanRangePrefix)
         let total = fanCount(state)
-        if total <= 1 {
-            guard let range = state.fans.first?.range else { return "" }
-            return "\(prefix) \(Int(range.min))–\(Int(range.max)) RPM"
-        }
-        let segments = (0..<total).compactMap { id -> String? in
+        return (0..<total).compactMap { id in
             guard let range = state.fans.first(where: { $0.id == id })?.range else { return nil }
-            return "\(fanLabel(id: id, total: total, localization: localization)) \(Int(range.min))–\(Int(range.max))"
+            let bounds = "\(Int(range.min))–\(Int(range.max)) RPM"
+            return total <= 1
+                ? "\(prefix) \(bounds)"
+                : "\(prefix) \(fanLabel(id: id, total: total, localization: localization)) \(bounds)"
         }
-        guard !segments.isEmpty else { return "" }
-        return "\(prefix) \(segments.joined(separator: " · ")) RPM"
     }
 
     // MARK: - Fault guidance
@@ -143,6 +153,20 @@ enum FanPanelText {
     /// (failsafe / SSD / battery-hot) is actively overriding the user's mode.
     enum FanBadgeState: String, Equatable, Sendable {
         case hidden, caution, critical
+
+        /// Shape differentiates the two alert levels without relying on hue
+        /// (color-vision deficiency): caution is an open ring, critical a
+        /// filled dot. Color stays as an additional channel.
+        enum Shape: Equatable, Sendable {
+            case ring, dot
+        }
+
+        var shape: Shape {
+            switch self {
+            case .hidden, .critical: return .dot
+            case .caution: return .ring
+            }
+        }
     }
 
     static func badgeState(of state: FanPanelState) -> FanBadgeState {

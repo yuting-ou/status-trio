@@ -1,10 +1,19 @@
 import SwiftUI
 
+/// The fan section's block order — the single source both the view and the
+/// order assertions read. 标题 → 实时主值 → 控制 → 帮助注脚: live readings
+/// sit directly under the title (matching the battery/network sections'
+/// primary-value position), controls follow, explanatory text comes last.
+enum FanSectionBlock: String, CaseIterable {
+    case readings, modePicker, parameters, writeError
+    /// Declaration order IS the layout contract; tests pin it.
+    static let order = FanSectionBlock.allCases
+}
+
 /// Fan section of the status popover: a read-only view of the FanCtl daemon's
-/// status.json plus mode/parameter commands that the daemon executes. Layout
-/// follows the shared section rhythm (StatusPanelSectionStyle): title row →
-/// controls body → annotation lines. All strings with semantics come from
-/// FanPanelText so the tests can pin them without rendering.
+/// status.json plus mode/parameter commands that the daemon executes. All
+/// strings with semantics come from FanPanelText so the tests can pin them
+/// without rendering.
 struct FanStatusView: View {
     @EnvironmentObject private var localization: Localization
     /// Observed directly: the popover's own `@ObservedObject var panel` does
@@ -30,9 +39,14 @@ struct FanStatusView: View {
                     .foregroundStyle(FanPanelStyle.caption)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                modePicker
-                parameterRow
-                annotationRows
+                ForEach(FanSectionBlock.order, id: \.self) { block in
+                    switch block {
+                    case .readings: readingsRows
+                    case .modePicker: modePicker
+                    case .parameters: parameterRow
+                    case .writeError: writeErrorRow
+                    }
+                }
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.15),
@@ -83,6 +97,44 @@ struct FanStatusView: View {
         case .raw(let text):
             return text
         }
+    }
+
+    // MARK: - Live readings (directly under the title, like other sections)
+
+    /// When the daemon's target differs from the actual spin, both lines are
+    /// labeled (目标/实际); when they coincide the target line is omitted.
+    private var showsDistinctTarget: Bool {
+        FanPanelText.targetRpmLine(state: state, localization: localization) != nil
+    }
+
+    private var readingsRows: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(FanPanelText.tempsLine(state: state))
+                .font(StatusPanelSectionStyle.readingFont)
+                .monospacedDigit()
+                .foregroundStyle(FanPanelStyle.caption)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Text(rpmPowerLine)
+                .font(StatusPanelSectionStyle.readingFont)
+                .monospacedDigit()
+                .foregroundStyle(FanPanelStyle.caption)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            if let fault = FanPanelText.faultLine(state: state, localization: localization) {
+                Text(fault)
+                    .font(StatusPanelSectionStyle.readingFont)
+                    .foregroundStyle(FanPanelStyle.fault)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var rpmPowerLine: String {
+        let rpm = FanPanelText.rpmLine(
+            state: state, localization: localization, labelsActual: showsDistinctTarget)
+        guard let power = FanPanelText.powerText(state: state) else { return rpm }
+        return "\(rpm) · \(power)"
     }
 
     // MARK: - Controls body
@@ -255,18 +307,28 @@ struct FanStatusView: View {
                         : "\(Int(gear))%")
                 }
             }
-            // One line, one topic each: daemon-computed targets, then the
-            // hardware range, then the percent semantics, then the safety net.
-            Text(FanPanelText.targetRpmLine(state: state, localization: localization))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(FanPanelText.rangeNoteLine(state: state, localization: localization))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.footnote)
-                .fixedSize(horizontal: false, vertical: true)
+            // Help lines: one line, one topic each. The target line exists
+            // only when it differs from the actual spin (else it would
+            // repeat the readings line verbatim).
+            if let targetLine = FanPanelText.targetRpmLine(state: state, localization: localization) {
+                Text(targetLine)
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .monospacedDigit()
+                    .foregroundStyle(FanPanelStyle.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            // One range line per fan: a joined line can wrap between a label
+            // and its value, which is how "右" once got detached on screen.
+            ForEach(
+                FanPanelText.rangeNoteLines(state: state, localization: localization),
+                id: \.self
+            ) { line in
+                Text(line)
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .monospacedDigit()
+                    .foregroundStyle(FanPanelStyle.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(localization.string(.fanManualZeroNote))
                 .font(StatusPanelSectionStyle.footnoteFont)
                 .foregroundStyle(FanPanelStyle.footnote)
@@ -281,44 +343,19 @@ struct FanStatusView: View {
     /// VoiceOver on the slider hears both the value and what it maps to.
     private var sliderAccessibilityValue: String {
         let pct = Int((draggedPercent ?? state.manualPercent ?? 30).rounded())
-        let target = FanPanelText.targetRpmLine(state: state, localization: localization)
+        let target = FanPanelText.targetRpmLine(state: state, localization: localization) ?? ""
         return target.isEmpty ? "\(pct)%" : "\(pct)% · \(target)"
     }
 
-    // MARK: - Annotation rows (readings + fault)
+    // MARK: - Write-failure surface
 
-    private var annotationRows: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(FanPanelText.tempsLine(state: state))
-                .font(StatusPanelSectionStyle.readingFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.caption)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Text(rpmPowerLine)
-                .font(StatusPanelSectionStyle.readingFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.caption)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if let fault = FanPanelText.faultLine(state: state, localization: localization) {
-                Text(fault)
-                    .font(StatusPanelSectionStyle.readingFont)
-                    .foregroundStyle(FanPanelStyle.fault)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            if monitor.lastWriteError != nil {
-                Text(localization.string(.fanWriteFailed))
-                    .font(StatusPanelSectionStyle.footnoteFont)
-                    .foregroundStyle(FanPanelStyle.fault)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    @ViewBuilder
+    private var writeErrorRow: some View {
+        if monitor.lastWriteError != nil {
+            Text(localization.string(.fanWriteFailed))
+                .font(StatusPanelSectionStyle.footnoteFont)
+                .foregroundStyle(FanPanelStyle.fault)
+                .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private var rpmPowerLine: String {
-        let rpm = FanPanelText.rpmLine(state: state, localization: localization)
-        guard let power = FanPanelText.powerText(state: state) else { return rpm }
-        return "\(rpm) · \(power)"
     }
 }

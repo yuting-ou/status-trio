@@ -417,6 +417,7 @@
 "fan.staleData" = "Dados da ventoinha desatualizados (%d s) — o daemon pode ter parado.";
 "fan.writeFailed" = "Ajuste não aplicado: falha ao gravar a configuração (verifique permissões).";
 "fan.badge.caution" = "Proteção térmica da ventoinha ativa";
+"fan.actualPrefix" = "Real";
 "settings.popup.volumeScroll.group" = "Rolagem do painel";
 "settings.popup.volumeScroll" = "Ajustar o volume com a rolagem";
 "settings.popup.volumeScroll.description" = "Role dentro do painel de status para alterar o volume de saída.";

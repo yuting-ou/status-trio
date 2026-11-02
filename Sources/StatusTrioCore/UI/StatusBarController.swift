@@ -1324,8 +1324,19 @@ final class StatusBarController: NSObject {
             x: button.bounds.width - side - 1, y: 1, width: side, height: side
         )
         layer.cornerRadius = side / 2
-        layer.backgroundColor = (fanBadgeState == .critical
-            ? NSColor.systemRed : NSColor.systemOrange).cgColor
+        // Shape AND color both carry the level (color-vision deficiency):
+        // caution is an open ring, critical a filled dot.
+        switch fanBadgeState {
+        case .caution:
+            layer.backgroundColor = NSColor.clear.cgColor
+            layer.borderWidth = 1.5
+            layer.borderColor = NSColor.systemOrange.cgColor
+        case .critical:
+            layer.backgroundColor = NSColor.systemRed.cgColor
+            layer.borderWidth = 0
+        case .hidden:
+            break
+        }
         if fanBadgeLayer == nil {
             button.layer?.addSublayer(layer)
             fanBadgeLayer = layer
