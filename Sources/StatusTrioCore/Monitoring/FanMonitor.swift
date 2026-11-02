@@ -131,8 +131,15 @@ final class FanMonitor: ObservableObject {
     ///   keep it only if they stay on FanCtl's own UI.
     @discardableResult
     func apply(_ mode: FanControlMode) -> Bool {
-        var config = (try? JSONSerialization.jsonObject(with: Data(contentsOf: configURL)))
-            as? [String: Any] ?? [:]
+        // Bail out when the existing config cannot be read as an object. The
+        // daemon's FanConfig has required keys (manualPercent, curve); writing
+        // a partial document would decode-fail on the daemon and silently drop
+        // the user's intent (it falls back to last-good). Refusing is louder
+        // and safer: the UI keeps showing the previous selection.
+        guard let configData = try? Data(contentsOf: configURL),
+              var config = (try? JSONSerialization.jsonObject(with: configData))
+                as? [String: Any]
+        else { return false }
         switch mode {
         case .auto:
             config["mode"] = "auto"

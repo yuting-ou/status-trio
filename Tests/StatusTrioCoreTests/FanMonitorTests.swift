@@ -114,6 +114,25 @@ struct FanMonitorTests {
         #expect(monitor.state.selection == .quiet)
     }
 
+    @Test func applyRefusesWhenExistingConfigIsUnreadable() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fanmonitor-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: freshStatus())
+            .write(to: dir.appendingPathComponent("status.json"))
+        // No config.json at all (and, below, a corrupted one) must both refuse:
+        // a partial write would decode-fail at the daemon and silently no-op.
+        let monitor = FanMonitor(directory: dir)
+        #expect(monitor.apply(.quiet) == false)
+        #expect(!FileManager.default.fileExists(
+            atPath: dir.appendingPathComponent("config.json").path))
+
+        try Data("not json".utf8).write(to: dir.appendingPathComponent("config.json"))
+        #expect(monitor.apply(.auto) == false)
+        let stillCorrupt = try Data(contentsOf: dir.appendingPathComponent("config.json"))
+        #expect(stillCorrupt == Data("not json".utf8))
+    }
+
     @Test func applyAutoKeepsEveryOtherKeyIncludingCustomCurve() throws {
         let custom = [["temp": 59.0, "percent": 0.0], ["temp": 88.0, "percent": 100.0]]
         let config: [String: Any] = [
