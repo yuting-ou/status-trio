@@ -102,6 +102,17 @@ struct FanRPMRange: Equatable, Sendable {
     var max: Double
 }
 
+/// One fan's readings. The daemon skips a fan whose RPM keys fail to decode
+/// (ControlEngine: allStates), so a missing entry IS the "no valid reading"
+/// signal and must render as a placeholder — while actualRPM == 0 is a real
+/// read (the fan is genuinely stopped) and must stay visible.
+struct FanReading: Equatable, Sendable {
+    var id: Int
+    var actualRPM: Double?
+    var targetRPM: Double?
+    var range: FanRPMRange?
+}
+
 struct FanPanelState: Equatable, Sendable {
     /// The daemon wrote status.json within the staleness window.
     var daemonAlive = false
@@ -111,19 +122,27 @@ struct FanPanelState: Equatable, Sendable {
     var ssdTemp: Double?
     var powerWatts: Double?
     var envTemp: Double?
-    /// Actual RPM per fan, in fan-id order.
-    var fanRPMs: [Double] = []
-    /// Daemon-computed target RPM per fan (status.json is the only honest source:
-    /// percent→RPM mapping lives in the daemon, Fans.swift).
-    var fanTargetRPMs: [Double] = []
-    /// Hardware RPM bounds per fan from status.json — the manual slider's range
-    /// annotation. The slider itself works in the daemon's own 0...100 percent
-    /// domain, so no UI value can ever be clamped.
-    var fanRanges: [FanRPMRange] = []
+    /// Per-fan readings keyed by hardware id (id 0 = 左, id 1 = 右 per FanCtl's
+    /// PanelModes). Sparse: a fan that failed to read is absent, not zeroed.
+    var fans: [FanReading] = []
+    /// hardwareProfile.fanCount from status.json — how many fans the machine
+    /// has, so a fully missing list still renders the right number of
+    /// placeholders instead of pretending the machine is fanless.
+    var expectedFanCount: Int?
     /// Raw daemon mode ("auto" / "curve" / "ai" / "manual") and control reason
     /// (auto/curve/ai/aiIdle/manual/battery/night/batteryHot/quiet/ssd/failsafe).
     var modeRaw: String?
     var reasonRaw: String?
+    /// Raw ControlFaultReason (sensorUnavailable / fanStateReadFailed /
+    /// smcWriteFailed / fanFeedbackMismatch / sensorImplausible /
+    /// sensorBelowAmbient) for the guidance line.
+    var faultReasonRaw: String?
+    /// config.json and status.json disagree on the mode: the intent was
+    /// written but the daemon's status has not caught up yet (status.json is
+    /// rewritten on change, and the rewrite can lag in fault windows). While
+    /// this is true the header shows a pending caption so the two mode
+    /// indicators can never contradict each other.
+    var modePending = false
     /// The learned-map value for the current temperature (decisionTrace.learned),
     /// display only.
     var aiLearnedPercent: Double?
@@ -316,17 +335,29 @@ final class FanMonitor: ObservableObject {
         next.powerWatts = plausible(status["powerWatts"])
         next.envTemp = plausible(status["envTemp"])
         if let fans = status["fans"] as? [[String: Any]] {
-            let ordered = fans.sorted { ($0["id"] as? Int ?? 0) < ($1["id"] as? Int ?? 0) }
-            next.fanRPMs = ordered.compactMap { $0["actualRPM"] as? Double }
-            next.fanTargetRPMs = ordered.compactMap { $0["targetRPM"] as? Double }
-            next.fanRanges = ordered.compactMap { fan in
-                guard let lo = fan["minRPM"] as? Double, let hi = fan["maxRPM"] as? Double,
-                      lo.isFinite, hi.isFinite, hi > lo else { return nil }
-                return FanRPMRange(min: lo, max: hi)
+            next.fans = fans.compactMap { fan in
+                guard let id = fan["id"] as? Int else { return nil }
+                var range: FanRPMRange?
+                if let lo = fan["minRPM"] as? Double, let hi = fan["maxRPM"] as? Double,
+                   lo.isFinite, hi.isFinite, hi > lo {
+                    range = FanRPMRange(min: lo, max: hi)
+                }
+                return FanReading(
+                    id: id,
+                    actualRPM: finite(fan["actualRPM"]),
+                    targetRPM: finite(fan["targetRPM"]),
+                    range: range
+                )
             }
+            .sorted { $0.id < $1.id }
+        }
+        if let profile = status["hardwareProfile"] as? [String: Any],
+           let count = profile["fanCount"] as? Int, count > 0 {
+            next.expectedFanCount = count
         }
         next.modeRaw = status["mode"] as? String
         next.reasonRaw = status["reason"] as? String
+        next.faultReasonRaw = status["faultReason"] as? String
         if let trace = status["decisionTrace"] as? [String: Any] {
             next.aiLearnedPercent = plausible(trace["learned"])
         }
@@ -350,6 +381,15 @@ final class FanMonitor: ObservableObject {
                 next.manualPercent = min(100, max(0, manual))
             }
         }
+
+        // Pending iff the daemon is alive and both sides name a mode that
+        // differs. A missing modeRaw (pre-field daemon) cannot prove pending.
+        if next.daemonAlive,
+           let selection = next.modeSelection,
+           let raw = next.modeRaw,
+           let statusMode = FanModeChoice(rawValue: raw) {
+            next.modePending = statusMode != selection
+        }
         return next
     }
 
@@ -357,6 +397,12 @@ final class FanMonitor: ObservableObject {
     /// temperature; negative and NaN payloads are rejected the same way.
     private static func plausible(_ value: Any?) -> Double? {
         guard let v = value as? Double, v.isFinite, v > 0, v < 150 else { return nil }
+        return v
+    }
+
+    /// Finite check for RPM-like values (0 is a legitimate read here).
+    private static func finite(_ value: Any?) -> Double? {
+        guard let v = value as? Double, v.isFinite, v >= 0 else { return nil }
         return v
     }
 

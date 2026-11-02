@@ -4,9 +4,8 @@ import SwiftUI
 /// status.json plus mode/parameter commands that the daemon executes. All
 /// semantics — safety floors, slew rates, mode resolution, percent→RPM
 /// mapping — stay behind the daemon; this view only renders and forwards
-/// intent. Every control works in the daemon's own domain (four modes,
-/// factory presets, three AI target gears, 0...100 manual percent), so no
-/// value shown here can be rewritten by the daemon's clamps.
+/// intent. All strings with semantics come from FanPanelText so the tests can
+/// pin them without rendering.
 struct FanStatusView: View {
     @EnvironmentObject private var localization: Localization
     /// Observed directly: the popover's own `@ObservedObject var panel` does
@@ -30,10 +29,11 @@ struct FanStatusView: View {
             } else {
                 readingsRows
 
-                if state.controlFault {
-                    Text(localization.string(.fanControlFault))
+                if let fault = FanPanelText.faultLine(state: state, localization: localization) {
+                    Text(fault)
                         .font(.caption)
                         .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
                 modePicker
@@ -58,7 +58,7 @@ struct FanStatusView: View {
             Spacer()
 
             if state.daemonAlive {
-                Text(reasonCaption)
+                Text(headerCaptionText)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -66,9 +66,22 @@ struct FanStatusView: View {
         }
     }
 
+    private var headerCaptionText: String {
+        switch FanPanelText.headerCaption(state: state) {
+        case .pending(let mode):
+            return "\(localization.string(mode.titleKey)) · \(localization.string(.fanPendingSuffix))"
+        case .reason(let key):
+            return localization.string(key)
+        case .mode(let mode):
+            return localization.string(mode.titleKey)
+        case .raw(let text):
+            return text
+        }
+    }
+
     private var readingsRows: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(tempsLine)
+            Text(FanPanelText.tempsLine(state: state))
                 .font(.caption)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
@@ -83,21 +96,10 @@ struct FanStatusView: View {
         }
     }
 
-    private var tempsLine: String {
-        var parts = ["CPU \(temp(state.cpuTemp))", "GPU \(temp(state.gpuTemp))"]
-        if let ssd = state.ssdTemp { parts.append("SSD \(temp(ssd))") }
-        return parts.joined(separator: "  ·  ")
-    }
-
     private var rpmPowerLine: String {
-        var parts: [String] = []
-        if !state.fanRPMs.isEmpty {
-            parts.append(state.fanRPMs.map { "\(Int($0.rounded()))" }.joined(separator: " / ") + " RPM")
-        }
-        if let watts = state.powerWatts {
-            parts.append(String(format: "%.1f W", watts))
-        }
-        return parts.joined(separator: "  ·  ")
+        let rpm = FanPanelText.rpmLine(state: state, localization: localization)
+        guard let power = FanPanelText.powerText(state: state) else { return rpm }
+        return "\(rpm)  ·  \(power)"
     }
 
     // MARK: - Mode row
@@ -202,10 +204,11 @@ struct FanStatusView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         } else if let learned = state.aiLearnedPercent {
-            Text("\(localization.string(.fanExperiencePrefix)) \(Int(learned.rounded()))%")
+            Text("\(localization.string(.fanLearnedAirflow)) \(Int(learned.rounded()))%")
                 .font(.caption2)
                 .monospacedDigit()
                 .foregroundStyle(.purple)
+                .help(localization.string(.fanLearnedAirflowHelp))
         }
     }
 
@@ -256,73 +259,26 @@ struct FanStatusView: View {
                     .buttonStyle(.plain)
                 }
             }
-            Text(targetRpmLine)
+            // One line, one topic each: daemon-computed targets, then the
+            // hardware range, then the percent semantics, then the safety net.
+            Text(FanPanelText.targetRpmLine(state: state, localization: localization))
                 .font(.caption2)
                 .monospacedDigit()
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
-            Text(rangeNoteLine)
+            Text(FanPanelText.rangeNoteLine(state: state, localization: localization))
+                .font(.caption2)
+                .monospacedDigit()
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+            Text(localization.string(.fanManualZeroNote))
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+            Text(localization.string(.fanFailsafeNote))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
         }
-    }
-
-    /// Daemon-computed target RPM (status.json) — the only honest target:
-    /// percent→RPM mapping belongs to the daemon.
-    private var targetRpmLine: String {
-        guard !state.fanTargetRPMs.isEmpty else { return "" }
-        let targets = state.fanTargetRPMs.map { "\(Int($0.rounded()))" }.joined(separator: " / ")
-        return "→ \(targets) RPM"
-    }
-
-    /// Bounds read from status.json (fans[].minRPM/maxRPM), never hardcoded.
-    private var rangeNoteLine: String {
-        let ranges = state.fanRanges
-            .map { "\(Int($0.min))–\(Int($0.max))" }
-            .joined(separator: " / ")
-        let rangeText = ranges.isEmpty ? "" : " · \(localization.string(.fanRangePrefix)) \(ranges) RPM"
-        return localization.string(.fanManualNote) + rangeText
-    }
-
-    // MARK: - Captions
-
-    /// The controlling reason is the daemon's truth (safety floors override
-    /// the user's mode); fall back to the config mode name only when the
-    /// daemon did not annotate a reason this beat.
-    private var reasonCaption: String {
-        if let reason = state.reasonRaw {
-            switch reason {
-            case "auto": return localization.string(.fanSystemManaged)
-            case "curve": return localization.string(.fanReasonCurve)
-            case "ai": return localization.string(.fanReasonAI)
-            case "aiIdle": return localization.string(.fanReasonAIIdle)
-            case "manual": return localization.string(.fanReasonManual)
-            case "battery": return localization.string(.fanReasonBattery)
-            case "night": return localization.string(.fanReasonNight)
-            case "batteryHot": return localization.string(.fanReasonBatteryHot)
-            case "quiet": return localization.string(.fanReasonQuiet)
-            case "ssd": return localization.string(.fanReasonSSD)
-            case "failsafe": return localization.string(.fanReasonFailsafe)
-            default: break
-            }
-        }
-        return modeCaption(state.modeRaw ?? "-")
-    }
-
-    private func modeCaption(_ raw: String) -> String {
-        switch raw {
-        case "auto": return localization.string(.fanModeAuto)
-        case "curve": return localization.string(.fanModeCurve)
-        case "ai": return localization.string(.fanModeAI)
-        case "manual": return localization.string(.fanModeManual)
-        default: return raw
-        }
-    }
-
-    private func temp(_ value: Double?) -> String {
-        guard let value else { return "—" }
-        return "\(Int(value.rounded()))°"
     }
 }

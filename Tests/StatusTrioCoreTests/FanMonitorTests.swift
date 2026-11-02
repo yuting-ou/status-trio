@@ -53,18 +53,43 @@ struct FanMonitorTests {
         #expect(monitor.state.gpuTemp == 51.2)
         #expect(monitor.state.ssdTemp == 38.9)
         #expect(monitor.state.powerWatts == 12.5)
-        // Fans publish in id order regardless of payload order.
-        #expect(monitor.state.fanRPMs == [2745.0, 3006.0])
-        #expect(monitor.state.fanTargetRPMs == [2800.0, 3100.0])
+        // Fans publish in id order regardless of payload order, keyed by id.
+        #expect(monitor.state.fans.map(\.id) == [0, 1])
+        #expect(monitor.state.fans.map(\.actualRPM) == [2745.0, 3006.0])
+        #expect(monitor.state.fans.map(\.targetRPM) == [2800.0, 3100.0])
         // RPM bounds come from status.json, never hardcoded.
-        #expect(monitor.state.fanRanges.count == 2)
-        #expect(monitor.state.fanRanges[0].min == 1350.0)
-        #expect(monitor.state.fanRanges[0].max == 5349.0)
-        #expect(monitor.state.fanRanges[1].min == 1458.0)
-        #expect(monitor.state.fanRanges[1].max == 5777.0)
+        #expect(monitor.state.fans[0].range == FanRPMRange(min: 1350, max: 5349))
+        #expect(monitor.state.fans[1].range == FanRPMRange(min: 1458, max: 5777))
         #expect(monitor.state.modeSelection == .curve)
         #expect(monitor.state.curveSelection == .quiet)
         #expect(monitor.state.curveIsCustom == false)
+    }
+
+    @Test func modePendingTracksConfigVersusStatusDisagreement() throws {
+        // Intent written (config=manual) but status.json still shows ai →
+        // pending. This is the exact mismatch the old UI showed as "手动 vs AI".
+        let (pending, _) = try makeFixture(
+            status: freshStatus(), // mode: "curve" in status.json
+            config: ["mode": "manual", "manualPercent": 45]
+        )
+        pending.refresh()
+        #expect(pending.state.modePending == true)
+
+        // Stable: both sides name the same mode.
+        let (stable, _) = try makeFixture(
+            status: freshStatus(),
+            config: ["mode": "curve", "preset": "quiet", "curve": FanCurveChoice.quiet.points]
+        )
+        stable.refresh()
+        #expect(stable.state.modePending == false)
+
+        // Dead daemon can never be "pending" — offline is its own state.
+        var stale = freshStatus()
+        stale["timestamp"] = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-120))
+        let (dead, _) = try makeFixture(status: stale, config: ["mode": "manual"])
+        dead.refresh()
+        #expect(dead.state.modePending == false)
+        #expect(dead.state.daemonAlive == false)
     }
 
     @Test func staleStatusMarksDaemonOffline() throws {
