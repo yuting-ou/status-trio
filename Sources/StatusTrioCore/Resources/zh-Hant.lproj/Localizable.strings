@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "請檢查風扇硬體；持續異常請查看日誌";
 "fan.managedExternally" = "由他處管理（%@）";
 "fan.controlFault" = "風扇控制故障";
+"fan.staleData" = "風扇資料已過期（%d 秒前）——守護程式可能已停止。";
+"fan.writeFailed" = "設定未生效：寫入設定失敗（請檢查權限）。";
+"fan.badge.caution" = "風扇高溫兜底中";
 "settings.popup.volumeScroll.group" = "面板滾動";
 "settings.popup.volumeScroll" = "捲動調節音量";
 "settings.popup.volumeScroll.description" = "在狀態面板內滾動即可調節輸出音量。";

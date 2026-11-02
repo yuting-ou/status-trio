@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "check the fan hardware; check logs if it persists";
 "fan.managedExternally" = "Managed elsewhere (%@)";
 "fan.controlFault" = "Fan control fault";
+"fan.staleData" = "Fan data is stale (%ds old) — daemon may have stopped.";
+"fan.writeFailed" = "Setting not applied: failed to write the config file (check permissions).";
+"fan.badge.caution" = "Fan safety floor active";
 "settings.popup.volumeScroll.group" = "Panel Scrolling";
 "settings.popup.volumeScroll" = "Adjust Volume by Scrolling";
 "settings.popup.volumeScroll.description" = "Scroll inside the status panel to change the output volume.";

@@ -101,6 +101,61 @@ struct FanMonitorTests {
         #expect(!monitor.state.daemonAlive)
     }
 
+    @Test func stalenessThresholdIsThirtySecondsWithAgeExposed() throws {
+        // Just inside the window: alive.
+        var fresh = freshStatus()
+        fresh["timestamp"] = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-29))
+        let (m1, _) = try makeFixture(status: fresh, config: [:])
+        m1.refresh()
+        #expect(m1.state.daemonAlive == true)
+        #expect(m1.state.statusFilePresent == true)
+        #expect(m1.state.statusAgeSeconds ?? 0 >= 29)
+
+        // Just outside: stale, with the age exposed for the UI caption.
+        var stale = freshStatus()
+        stale["timestamp"] = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-31))
+        let (m2, _) = try makeFixture(status: stale, config: [:])
+        m2.refresh()
+        #expect(m2.state.daemonAlive == false)
+        #expect(m2.state.statusFilePresent == true)
+        #expect(m2.state.statusAgeSeconds ?? 0 >= 31)
+
+        // Missing file: offline without an age.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fanmonitor-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let m3 = FanMonitor(directory: dir)
+        m3.refresh()
+        #expect(m3.state.daemonAlive == false)
+        #expect(m3.state.statusFilePresent == false)
+        #expect(m3.state.statusAgeSeconds == nil)
+    }
+
+    @Test func writeFailureIsSurfacedNotSilent() throws {
+        // A read-only config directory makes the atomic write fail; the
+        // monitor must report it via lastWriteError AND keep returning false.
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("fanmonitor-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: freshStatus())
+            .write(to: dir.appendingPathComponent("status.json"))
+        try JSONSerialization.data(withJSONObject: ["mode": "curve"])
+            .write(to: dir.appendingPathComponent("config.json"))
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o555], ofItemAtPath: dir.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: dir.path) }
+
+        let monitor = FanMonitor(directory: dir)
+        #expect(monitor.lastWriteError == nil)
+        #expect(monitor.setMode(.auto) == false)
+        #expect(monitor.lastWriteError != nil)
+
+        // A later successful write clears the flag.
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: dir.path)
+        #expect(monitor.setMode(.auto) == true)
+        #expect(monitor.lastWriteError == nil)
+    }
+
     @Test func zeroTempIsTreatedAsFaultMarkerNotAirTemperature() throws {
         var status = freshStatus()
         status["sensors"] = ["cpuDie": 0.0, "gpuDie": 41.0]

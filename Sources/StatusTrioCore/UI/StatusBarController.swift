@@ -10,6 +10,7 @@ private struct UncheckedSendableNSEvent: @unchecked Sendable {
 private struct StatusBarAccessibilityKey: Equatable {
     let snapshot: StatusSnapshot
     let language: AppLanguage
+    let fanBadge: FanPanelText.FanBadgeState
 }
 
 @MainActor
@@ -60,6 +61,9 @@ final class StatusBarController: NSObject {
     let chargingEffectClock: ChargingEffectClock
     private var iconPresentationCancellable: AnyCancellable?
     private var accessibilityCancellable: AnyCancellable?
+    private var fanBadgeCancellable: AnyCancellable?
+    private var fanBadgeLayer: CALayer?
+    private var fanBadgeState: FanPanelText.FanBadgeState = .hidden
     /// The single accessibility update waiting on the main actor, so a burst of
     /// emissions cannot queue one stale update per value.
     private var accessibilityUpdateTask: Task<Void, Never>?
@@ -287,6 +291,14 @@ final class StatusBarController: NSObject {
         .sink { [weak self] _, _ in
             self?.scheduleAccessibilityUpdate()
         }
+
+        // Fan attention badge: a small corner dot on the status item for
+        // states that deserve a glance (fault / active safety floor). The
+        // three-in-one icon pipeline is untouched; the dot is an additive
+        // layer that exists only while a badge state is active.
+        fanBadgeCancellable = panelViewModel.fanMonitor.$state
+            .removeDuplicates()
+            .sink { [weak self] state in self?.applyFanBadge(state) }
 
         refreshIntervalCancellable = settings.$refreshIntervalSeconds
             .removeDuplicates()
@@ -1265,14 +1277,59 @@ final class StatusBarController: NSObject {
     }
 
     private func updateAccessibility(snapshot: StatusSnapshot, language: AppLanguage) {
-        let key = StatusBarAccessibilityKey(snapshot: snapshot, language: language)
+        let key = StatusBarAccessibilityKey(
+            snapshot: snapshot, language: language, fanBadge: fanBadgeState
+        )
         guard key != accessibilityKey else { return }
         accessibilityKey = key
         guard let button = statusItem.button else { return }
         button.setAccessibilityLabel(AccessibilityPresentation.statusItemLabel)
-        let value = AccessibilityPresentation.statusItemValue(snapshot, localization: localization)
+        var value = AccessibilityPresentation.statusItemValue(snapshot, localization: localization)
+        if fanBadgeState != .hidden {
+            let suffix = fanBadgeState == .critical
+                ? localization.string(.fanControlFault)
+                : localization.string(.fanBadgeCaution)
+            value += " · \(suffix)"
+        }
         button.setAccessibilityValue(value)
         accessibilityValueDidChange(value)
+    }
+
+    // MARK: - Fan attention badge
+
+    /// `fanBadgeDebugOverride` (defaults, values: hidden/caution/critical) is
+    /// a QA hook for screenshotting badge states on demand; unset in
+    /// production, and never written by the app itself.
+    private func applyFanBadge(_ state: FanPanelState) {
+        let override = UserDefaults.standard.string(forKey: "fanBadgeDebugOverride")
+            .flatMap(FanPanelText.FanBadgeState.init(rawValue:))
+        let badge = override ?? FanPanelText.badgeState(of: state)
+        guard badge != fanBadgeState else { return }
+        fanBadgeState = badge
+        updateFanBadgeLayer()
+        scheduleAccessibilityUpdate()
+    }
+
+    private func updateFanBadgeLayer() {
+        guard let button = statusItem.button else { return }
+        if fanBadgeState == .hidden {
+            fanBadgeLayer?.removeFromSuperlayer()
+            fanBadgeLayer = nil
+            return
+        }
+        if button.layer == nil { button.wantsLayer = true }
+        let layer = fanBadgeLayer ?? CALayer()
+        let side: CGFloat = 7
+        layer.frame = CGRect(
+            x: button.bounds.width - side - 1, y: 1, width: side, height: side
+        )
+        layer.cornerRadius = side / 2
+        layer.backgroundColor = (fanBadgeState == .critical
+            ? NSColor.systemRed : NSColor.systemOrange).cgColor
+        if fanBadgeLayer == nil {
+            button.layer?.addSublayer(layer)
+            fanBadgeLayer = layer
+        }
     }
 
     private static var appVersion: String {

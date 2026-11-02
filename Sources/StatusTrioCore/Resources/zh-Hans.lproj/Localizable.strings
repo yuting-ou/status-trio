@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "请检查风扇硬件；持续异常请查看日志";
 "fan.managedExternally" = "由他处管理（%@）";
 "fan.controlFault" = "风扇控制故障";
+"fan.staleData" = "风扇数据已过期（%d 秒前）——守护进程可能已停止。";
+"fan.writeFailed" = "设置未生效：写入配置失败（请检查权限）。";
+"fan.badge.caution" = "风扇高温兜底中";
 "settings.popup.volumeScroll.group" = "面板滚动";
 "settings.popup.volumeScroll" = "滚动调节音量";
 "settings.popup.volumeScroll.description" = "在状态面板内滚动即可调节输出音量。";

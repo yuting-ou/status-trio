@@ -183,6 +183,28 @@ struct FanPanelTextTests {
         #expect(FanPanelText.faultLine(state: s, localization: loc) == nil)
     }
 
+    // MARK: - F20 Menu-bar badge mapping
+
+    @Test func badgeStateMapsFaultToCriticalAndFloorsToCaution() {
+        var s = twoFanState()
+
+        s.controlFault = true
+        #expect(FanPanelText.badgeState(of: s) == .critical)
+
+        s.controlFault = false
+        for floor in ["failsafe", "ssd", "batteryHot"] {
+            s.reasonRaw = floor
+            #expect(FanPanelText.badgeState(of: s) == .caution, "reason=\(floor)")
+        }
+
+        for calm in ["auto", "curve", "ai", "aiIdle", "manual", "battery", "night", "quiet"] {
+            s.reasonRaw = calm
+            #expect(FanPanelText.badgeState(of: s) == .hidden, "reason=\(calm)")
+        }
+        s.reasonRaw = nil
+        #expect(FanPanelText.badgeState(of: s) == .hidden)
+    }
+
     @Test func singleFanMachineHasNoSideLabels() {
         let loc = makeLocalization()
         var s = FanPanelState()

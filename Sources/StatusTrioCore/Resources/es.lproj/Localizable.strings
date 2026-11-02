@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "revisa el hardware del ventilador; logs si persiste";
 "fan.managedExternally" = "Gestionado externamente (%@)";
 "fan.controlFault" = "Fallo de control del ventilador";
+"fan.staleData" = "Datos del ventilador obsoletos (%d s) — el demonio puede haberse detenido.";
+"fan.writeFailed" = "Ajuste no aplicado: no se pudo escribir la configuración (revisa permisos).";
+"fan.badge.caution" = "Protección térmica del ventilador activa";
 "settings.popup.volumeScroll.group" = "Desplazamiento del panel";
 "settings.popup.volumeScroll" = "Ajustar el volumen desplazándose";
 "settings.popup.volumeScroll.description" = "Desplázate dentro del panel de estado para cambiar el volumen de salida.";

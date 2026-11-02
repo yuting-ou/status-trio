@@ -22,7 +22,10 @@ struct FanStatusView: View {
             headerRow
 
             if !state.daemonAlive {
-                Text(localization.string(.fanDaemonOffline))
+                // Two distinct offline truths: no status file at all (daemon
+                // never ran) vs a file that stopped updating (daemon died or
+                // hung — the last values must not pose as live).
+                Text(offlineText)
                     .font(StatusPanelSectionStyle.readingFont)
                     .foregroundStyle(FanPanelStyle.caption)
                     .fixedSize(horizontal: false, vertical: true)
@@ -60,6 +63,13 @@ struct FanStatusView: View {
                     .lineLimit(1)
             }
         }
+    }
+
+    private var offlineText: String {
+        if state.statusFilePresent, let age = state.statusAgeSeconds {
+            return localization.format(.fanStaleData, Int(age.rounded(.down)))
+        }
+        return localization.string(.fanDaemonOffline)
     }
 
     private var headerCaptionText: String {
@@ -294,6 +304,12 @@ struct FanStatusView: View {
             if let fault = FanPanelText.faultLine(state: state, localization: localization) {
                 Text(fault)
                     .font(StatusPanelSectionStyle.readingFont)
+                    .foregroundStyle(FanPanelStyle.fault)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if monitor.lastWriteError != nil {
+                Text(localization.string(.fanWriteFailed))
+                    .font(StatusPanelSectionStyle.footnoteFont)
                     .foregroundStyle(FanPanelStyle.fault)
                     .fixedSize(horizontal: false, vertical: true)
             }

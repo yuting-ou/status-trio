@@ -136,6 +136,24 @@ enum FanPanelText {
         return "\(localization.string(reasonKey)) · \(localization.string(guideKey))"
     }
 
+    // MARK: - Menu-bar badge
+
+    /// Menu-bar attention level derived from the daemon's truth only.
+    /// critical = control closed loop faulted; caution = a safety floor
+    /// (failsafe / SSD / battery-hot) is actively overriding the user's mode.
+    enum FanBadgeState: String, Equatable, Sendable {
+        case hidden, caution, critical
+    }
+
+    static func badgeState(of state: FanPanelState) -> FanBadgeState {
+        if state.controlFault { return .critical }
+        if let reason = state.reasonRaw,
+           reason == "failsafe" || reason == "ssd" || reason == "batteryHot" {
+            return .caution
+        }
+        return .hidden
+    }
+
     // MARK: - Header caption
 
     enum HeaderCaption: Equatable {

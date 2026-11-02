@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "verifique o hardware da ventoinha; logs se persistir";
 "fan.managedExternally" = "Gerenciado externamente (%@)";
 "fan.controlFault" = "Falha no controle da ventoinha";
+"fan.staleData" = "Dados da ventoinha desatualizados (%d s) — o daemon pode ter parado.";
+"fan.writeFailed" = "Ajuste não aplicado: falha ao gravar a configuração (verifique permissões).";
+"fan.badge.caution" = "Proteção térmica da ventoinha ativa";
 "settings.popup.volumeScroll.group" = "Rolagem do painel";
 "settings.popup.volumeScroll" = "Ajustar o volume com a rolagem";
 "settings.popup.volumeScroll.description" = "Role dentro do painel de status para alterar o volume de saída.";

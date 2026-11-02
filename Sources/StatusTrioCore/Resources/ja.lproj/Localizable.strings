@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "ファンハードウェアを確認。継続する場合はログを確認";
 "fan.managedExternally" = "外部で管理中（%@）";
 "fan.controlFault" = "ファン制御の故障";
+"fan.staleData" = "ファンデータは %d 秒前のものです — デーモン停止の可能性。";
+"fan.writeFailed" = "設定は反映されていません：設定ファイルの書き込みに失敗（権限を確認）。";
+"fan.badge.caution" = "ファン保護で全速中";
 "settings.popup.volumeScroll.group" = "パネルのスクロール";
 "settings.popup.volumeScroll" = "スクロールで音量を調整";
 "settings.popup.volumeScroll.description" = "ステータスパネル内をスクロールすると出力音量を変更できます。";

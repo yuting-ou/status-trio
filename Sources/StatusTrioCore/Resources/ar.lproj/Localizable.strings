@@ -414,6 +414,9 @@
 "fan.faultGuide.fan" = "افحص عتاد المروحة؛ راجع السجلات إن استمر";
 "fan.managedExternally" = "يُدار خارجيًا (%@)";
 "fan.controlFault" = "عطل في التحكم بالمروحة";
+"fan.staleData" = "بيانات المروحة قديمة (%d ث) — قد تكون الخدمة متوقفة.";
+"fan.writeFailed" = "لم يُطبَّق الإعداد: فشلت كتابة ملف الإعدادات (افحص الأذونات).";
+"fan.badge.caution" = "حماية المروحة من الحرارة نشطة";
 "settings.popup.volumeScroll.group" = "تمرير اللوحة";
 "settings.popup.volumeScroll" = "ضبط مستوى الصوت بالتمرير";
 "settings.popup.volumeScroll.description" = "مرّر داخل لوحة الحالة لتغيير مستوى صوت الإخراج.";

@@ -116,6 +116,10 @@ struct FanReading: Equatable, Sendable {
 struct FanPanelState: Equatable, Sendable {
     /// The daemon wrote status.json within the staleness window.
     var daemonAlive = false
+    /// Seconds since the status.json timestamp (for the "数据已过期" caption).
+    var statusAgeSeconds: Double?
+    /// False when status.json itself is missing (daemon never installed/ran).
+    var statusFilePresent = false
     /// nil when the reading is absent or implausible (e.g. sensor fault writes 0).
     var cpuTemp: Double?
     var gpuTemp: Double?
@@ -164,6 +168,9 @@ struct FanPanelState: Equatable, Sendable {
 @MainActor
 final class FanMonitor: ObservableObject {
     @Published private(set) var state = FanPanelState()
+    /// Last control-write failure, shown in the UI instead of failing
+    /// silently. nil after the next successful write.
+    @Published private(set) var lastWriteError: String?
 
     private let statusURL: URL
     private let configURL: URL
@@ -284,12 +291,22 @@ final class FanMonitor: ObservableObject {
         guard let configData = try? Data(contentsOf: configURL),
               var config = (try? JSONSerialization.jsonObject(with: configData))
                 as? [String: Any]
-        else { return false }
+        else {
+            lastWriteError = "read"
+            return false
+        }
         mutate(&config)
         guard let data = try? JSONSerialization.data(
             withJSONObject: config, options: [.prettyPrinted, .sortedKeys]
-        ) else { return false }
-        guard Self.writeAtomically(data, to: configURL) else { return false }
+        ) else {
+            lastWriteError = "encode"
+            return false
+        }
+        guard Self.writeAtomically(data, to: configURL) else {
+            lastWriteError = "write"
+            return false
+        }
+        lastWriteError = nil
         refresh()
         return true
     }
@@ -322,10 +339,15 @@ final class FanMonitor: ObservableObject {
         guard let statusData = try? Data(contentsOf: statusURL),
               let status = try? JSONSerialization.jsonObject(with: statusData) as? [String: Any]
         else { return next }
+        next.statusFilePresent = true
 
         let stamp = (status["timestamp"] as? String)
             .flatMap { Self.iso8601.date(from: $0) }
-        next.daemonAlive = stamp.map { Date().timeIntervalSince($0) < stalenessWindow } ?? false
+        if let stamp {
+            let age = Date().timeIntervalSince(stamp)
+            next.statusAgeSeconds = age
+            next.daemonAlive = age < stalenessWindow
+        }
 
         if let sensors = status["sensors"] as? [String: Any] {
             next.cpuTemp = plausible(sensors["cpuDie"])
