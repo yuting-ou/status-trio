@@ -418,6 +418,7 @@
 "fan.writeFailed" = "Ajuste no aplicado: no se pudo escribir la configuración (revisa permisos).";
 "fan.badge.caution" = "Protección térmica del ventilador activa";
 "fan.actualPrefix" = "Real";
+"fan.infoLabel" = "Notas del ventilador";
 "settings.popup.volumeScroll.group" = "Desplazamiento del panel";
 "settings.popup.volumeScroll" = "Ajustar el volumen desplazándose";
 "settings.popup.volumeScroll.description" = "Desplázate dentro del panel de estado para cambiar el volumen de salida.";

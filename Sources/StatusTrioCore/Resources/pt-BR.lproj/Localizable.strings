@@ -418,6 +418,7 @@
 "fan.writeFailed" = "Ajuste não aplicado: falha ao gravar a configuração (verifique permissões).";
 "fan.badge.caution" = "Proteção térmica da ventoinha ativa";
 "fan.actualPrefix" = "Real";
+"fan.infoLabel" = "Notas da ventoinha";
 "settings.popup.volumeScroll.group" = "Rolagem do painel";
 "settings.popup.volumeScroll" = "Ajustar o volume com a rolagem";
 "settings.popup.volumeScroll.description" = "Role dentro do painel de status para alterar o volume de saída.";

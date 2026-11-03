@@ -418,6 +418,7 @@
 "fan.writeFailed" = "설정이 적용되지 않았습니다: 설정 파일 쓰기 실패(권한 확인).";
 "fan.badge.caution" = "팬 고온 보호 작동 중";
 "fan.actualPrefix" = "실제";
+"fan.infoLabel" = "팬 설명";
 "settings.popup.volumeScroll.group" = "패널 스크롤";
 "settings.popup.volumeScroll" = "스크롤로 볼륨 조절";
 "settings.popup.volumeScroll.description" = "상태 패널 안에서 스크롤하면 출력 볼륨이 바뀝니다.";

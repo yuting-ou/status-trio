@@ -1,19 +1,18 @@
 import SwiftUI
 
 /// The fan section's block order — the single source both the view and the
-/// order assertions read. 标题 → 实时主值 → 控制 → 帮助注脚: live readings
-/// sit directly under the title (matching the battery/network sections'
-/// primary-value position), controls follow, explanatory text comes last.
+/// order assertions read. The title row (icon + primary value + subtitle +
+/// state line) is always first, then: controls → parameter help → footnotes.
 enum FanSectionBlock: String, CaseIterable {
-    case readings, modePicker, parameters, writeError
+    case fault, modePicker, parameters, footnotes, writeError
     /// Declaration order IS the layout contract; tests pin it.
     static let order = FanSectionBlock.allCases
 }
 
-/// Fan section of the status popover: a read-only view of the FanCtl daemon's
-/// status.json plus mode/parameter commands that the daemon executes. All
-/// strings with semantics come from FanPanelText so the tests can pin them
-/// without rendering.
+/// Fan section of the status popover. Layout mirrors the battery/Wi-Fi
+/// sections exactly: title row = icon + headline primary value (actual RPM)
+/// + caption subtitle (temps/power) + state line; everything below aligns to
+/// the content column (icon right edge); controls before help text.
 struct FanStatusView: View {
     @EnvironmentObject private var localization: Localization
     /// Observed directly: the popover's own `@ObservedObject var panel` does
@@ -22,6 +21,7 @@ struct FanStatusView: View {
     /// While the slider is being dragged the local value leads; the debounced
     /// write lands in config.json a beat later and refresh() re-syncs.
     @State private var draggedPercent: Double?
+    @State private var showInfo = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var state: FanPanelState { monitor.state }
@@ -32,8 +32,7 @@ struct FanStatusView: View {
 
             if !state.daemonAlive {
                 // Two distinct offline truths: no status file at all (daemon
-                // never ran) vs a file that stopped updating (daemon died or
-                // hung — the last values must not pose as live).
+                // never ran) vs a file that stopped updating.
                 Text(offlineText)
                     .font(StatusPanelSectionStyle.readingFont)
                     .foregroundStyle(FanPanelStyle.caption)
@@ -41,9 +40,10 @@ struct FanStatusView: View {
             } else {
                 ForEach(FanSectionBlock.order, id: \.self) { block in
                     switch block {
-                    case .readings: readingsRows
+                    case .fault: faultRow
                     case .modePicker: modePicker
                     case .parameters: parameterRow
+                    case .footnotes: footnoteRows
                     case .writeError: writeErrorRow
                     }
                 }
@@ -53,40 +53,44 @@ struct FanStatusView: View {
                    value: state.modeSelection)
     }
 
-    // MARK: - Title row
+    // MARK: - Title row (icon + primary value + subtitle + state)
 
     private var headerRow: some View {
         HStack(spacing: StatusPanelSectionStyle.rowSpacing) {
             Image(systemName: SymbolFallback.name("fan", "wind"))
                 .font(.system(size: StatusPanelSectionStyle.iconPointSize,
                               weight: StatusPanelSectionStyle.iconWeight))
-                .foregroundStyle(.teal)
+                .foregroundStyle(.secondary)
                 .frame(width: StatusPanelSectionStyle.iconFrame,
                        height: StatusPanelSectionStyle.iconFrame)
                 .accessibilityHidden(true)
 
-            Text(localization.string(.settingsPopupOrderFan))
-                .font(StatusPanelSectionStyle.titleFont)
-
-            Spacer()
-
-            if state.daemonAlive {
-                Text(headerCaptionText)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(FanPanelText.primaryRpmLine(
+                    state: state, localization: localization))
+                    .font(StatusPanelSectionStyle.titleFont)
+                    .monospacedDigit()
+                Text(FanPanelText.subtitleLine(state: state))
                     .font(StatusPanelSectionStyle.readingFont)
+                    .monospacedDigit()
                     .foregroundStyle(FanPanelStyle.caption)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(stateLineText)
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .foregroundStyle(FanPanelStyle.footnote)
+                    .lineLimit(1)
             }
+
+            Spacer()
+            // No affordance on the right: there is no fan settings page yet
+            // (tracked for P1). No dead gear icon.
         }
     }
 
-    private var offlineText: String {
-        if state.statusFilePresent, let age = state.statusAgeSeconds {
-            return localization.format(.fanStaleData, Int(age.rounded(.down)))
-        }
-        return localization.string(.fanDaemonOffline)
-    }
-
-    private var headerCaptionText: String {
+    /// ③ Mode/reason/pending/fault-handback all live here now — never on the
+    /// title row's right side.
+    private var stateLineText: String {
         switch FanPanelText.headerCaption(state: state) {
         case .pending(let mode):
             return "\(localization.string(mode.titleKey)) · \(localization.string(.fanPendingSuffix))"
@@ -99,42 +103,24 @@ struct FanStatusView: View {
         }
     }
 
-    // MARK: - Live readings (directly under the title, like other sections)
-
-    /// When the daemon's target differs from the actual spin, both lines are
-    /// labeled (目标/实际); when they coincide the target line is omitted.
-    private var showsDistinctTarget: Bool {
-        FanPanelText.targetRpmLine(state: state, localization: localization) != nil
-    }
-
-    private var readingsRows: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(FanPanelText.tempsLine(state: state))
-                .font(StatusPanelSectionStyle.readingFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.caption)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Text(rpmPowerLine)
-                .font(StatusPanelSectionStyle.readingFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.caption)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if let fault = FanPanelText.faultLine(state: state, localization: localization) {
-                Text(fault)
-                    .font(StatusPanelSectionStyle.readingFont)
-                    .foregroundStyle(FanPanelStyle.fault)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+    private var offlineText: String {
+        if state.statusFilePresent, let age = state.statusAgeSeconds {
+            return localization.format(.fanStaleData, Int(age.rounded(.down)))
         }
+        return localization.string(.fanDaemonOffline)
     }
 
-    private var rpmPowerLine: String {
-        let rpm = FanPanelText.rpmLine(
-            state: state, localization: localization, labelsActual: showsDistinctTarget)
-        guard let power = FanPanelText.powerText(state: state) else { return rpm }
-        return "\(rpm) · \(power)"
+    // MARK: - Fault alert
+
+    @ViewBuilder
+    private var faultRow: some View {
+        if let fault = FanPanelText.faultLine(state: state, localization: localization) {
+            Text(fault)
+                .font(StatusPanelSectionStyle.readingFont)
+                .foregroundStyle(FanPanelStyle.fault)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
+        }
     }
 
     // MARK: - Controls body
@@ -148,10 +134,9 @@ struct FanStatusView: View {
         .pickerStyle(.segmented)
         .labelsHidden()
         .accessibilityLabel(localization.string(.settingsPopupOrderFan))
+        .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
     }
 
-    /// nil selection means the config was shaped outside what this panel can
-    /// express; the segmented row deliberately shows nothing rather than lie.
     private var modeBinding: Binding<FanModeChoice?> {
         Binding(
             get: { state.modeSelection },
@@ -165,9 +150,9 @@ struct FanStatusView: View {
 
     @ViewBuilder
     private var parameterRow: some View {
-        switch state.modeSelection {
-        case .curve:
-            VStack(alignment: .leading, spacing: StatusPanelSectionStyle.annotationSpacing) {
+        VStack(alignment: .leading, spacing: StatusPanelSectionStyle.annotationSpacing) {
+            switch state.modeSelection {
+            case .curve:
                 Picker("", selection: curveBinding) {
                     ForEach(FanCurveChoice.allCases) { preset in
                         Text(localization.string(preset.titleKey)).tag(Optional(preset))
@@ -181,9 +166,7 @@ struct FanStatusView: View {
                         .font(StatusPanelSectionStyle.footnoteFont)
                         .foregroundStyle(FanPanelStyle.footnote)
                 }
-            }
-        case .ai:
-            VStack(alignment: .leading, spacing: StatusPanelSectionStyle.annotationSpacing) {
+            case .ai:
                 Picker("", selection: aiTargetBinding) {
                     ForEach(FanAITargetChoice.allCases) { target in
                         Text("\(localization.string(target.titleKey)) \(Int(target.rawValue))°C")
@@ -197,18 +180,19 @@ struct FanStatusView: View {
                     .font(StatusPanelSectionStyle.footnoteFont)
                     .foregroundStyle(FanPanelStyle.footnote)
                 aiCaption
+            case .manual:
+                manualControls
+            case .auto:
+                Text(localization.string(.fanSystemManaged))
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .foregroundStyle(FanPanelStyle.footnote)
+            case nil:
+                Text(localization.format(.fanManagedExternally, state.modeRaw ?? "-"))
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .foregroundStyle(FanPanelStyle.footnote)
             }
-        case .manual:
-            manualControls
-        case .auto:
-            Text(localization.string(.fanSystemManaged))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .foregroundStyle(FanPanelStyle.footnote)
-        case nil:
-            Text(localization.format(.fanManagedExternally, state.modeRaw ?? "-"))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .foregroundStyle(FanPanelStyle.footnote)
         }
+        .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
     }
 
     private var curveBinding: Binding<FanCurveChoice?> {
@@ -238,11 +222,8 @@ struct FanStatusView: View {
                 .font(StatusPanelSectionStyle.footnoteFont)
                 .foregroundStyle(FanPanelStyle.footnote)
         } else if state.reasonRaw == "aiIdle" {
-            Text(localization.string(.fanReasonAIIdle))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .foregroundStyle(FanPanelStyle.footnote)
+            EmptyView() // handback already shown in the state line
         } else if let learned = state.aiLearnedPercent {
-            // Self-explanatory on screen — the tooltip is supplementary only.
             Text(localization.format(.fanLearnedAirflowLine, Int(learned.rounded())))
                 .font(StatusPanelSectionStyle.footnoteFont)
                 .monospacedDigit()
@@ -251,28 +232,31 @@ struct FanStatusView: View {
         }
     }
 
-    // MARK: - Manual controls
+    // MARK: - Manual controls (slider mirrors the volume section's shape)
 
     private var manualControls: some View {
         VStack(alignment: .leading, spacing: StatusPanelSectionStyle.annotationSpacing) {
             HStack(spacing: StatusPanelSectionStyle.blockSpacing) {
-                Text("\(Int((draggedPercent ?? state.manualPercent ?? 30).rounded()))%")
-                    .font(StatusPanelSectionStyle.readingFont.weight(.semibold))
-                    .monospacedDigit()
-                    .frame(minWidth: 34, alignment: .leading)
                 Slider(
                     value: Binding(
                         get: { draggedPercent ?? state.manualPercent ?? 30 },
                         set: { value in
-                            draggedPercent = value
-                            monitor.setManualPercent(value)
+                            // No `step:` (tick marks would show); round to the
+                            // same 5% grid in the setter instead.
+                            let snapped = (value / 5).rounded() * 5
+                            draggedPercent = snapped
+                            monitor.setManualPercent(snapped)
                         }
                     ),
-                    in: FanMonitor.manualPercentRange,
-                    step: 5
+                    in: FanMonitor.manualPercentRange
                 )
                 .accessibilityLabel(localization.string(.fanReasonManual))
                 .accessibilityValue(sliderAccessibilityValue)
+                Text("\(Int((draggedPercent ?? state.manualPercent ?? 30).rounded()))%")
+                    .font(StatusPanelSectionStyle.readingFont.monospacedDigit())
+                    .foregroundStyle(FanPanelStyle.caption)
+                    .frame(minWidth: 34, alignment: .trailing)
+                    .accessibilityHidden(true)
             }
             HStack(spacing: 6) {
                 ForEach([0.0, 25.0, 50.0, 75.0, 100.0], id: \.self) { gear in
@@ -307,9 +291,8 @@ struct FanStatusView: View {
                         : "\(Int(gear))%")
                 }
             }
-            // Help lines: one line, one topic each. The target line exists
-            // only when it differs from the actual spin (else it would
-            // repeat the readings line verbatim).
+            // The target line exists only when it differs from the actual
+            // spin (else it would repeat the headline verbatim).
             if let targetLine = FanPanelText.targetRpmLine(state: state, localization: localization) {
                 Text(targetLine)
                     .font(StatusPanelSectionStyle.footnoteFont)
@@ -317,26 +300,6 @@ struct FanStatusView: View {
                     .foregroundStyle(FanPanelStyle.footnote)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            // One range line per fan: a joined line can wrap between a label
-            // and its value, which is how "右" once got detached on screen.
-            ForEach(
-                FanPanelText.rangeNoteLines(state: state, localization: localization),
-                id: \.self
-            ) { line in
-                Text(line)
-                    .font(StatusPanelSectionStyle.footnoteFont)
-                    .monospacedDigit()
-                    .foregroundStyle(FanPanelStyle.footnote)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text(localization.string(.fanManualZeroNote))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .foregroundStyle(FanPanelStyle.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(localization.string(.fanFailsafeNote))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .foregroundStyle(FanPanelStyle.footnote)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -345,6 +308,53 @@ struct FanStatusView: View {
         let pct = Int((draggedPercent ?? state.manualPercent ?? 30).rounded())
         let target = FanPanelText.targetRpmLine(state: state, localization: localization) ?? ""
         return target.isEmpty ? "\(pct)%" : "\(pct)% · \(target)"
+    }
+
+    // MARK: - Footnotes (one range line + ⓘ for the explanation notes)
+
+    @ViewBuilder
+    private var footnoteRows: some View {
+        if state.modeSelection == .manual {
+            HStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 1) {
+                    ForEach(
+                        FanPanelText.rangeFootnoteLines(
+                            state: state, localization: localization, maxWidth: 268),
+                        id: \.self
+                    ) { line in
+                        Text(line)
+                            .font(StatusPanelSectionStyle.footnoteFont)
+                            .monospacedDigit()
+                            .foregroundStyle(FanPanelStyle.footnote)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer()
+                Button {
+                    showInfo.toggle()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(localization.string(.fanInfoLabel))
+                .help(localization.string(.fanInfoLabel))
+                .popover(isPresented: $showInfo, arrowEdge: .trailing) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(FanPanelText.infoLines(localization: localization), id: \.self) { line in
+                            Text(line)
+                                .font(.caption)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(10)
+                    .frame(width: 240)
+                }
+            }
+            .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
+        }
     }
 
     // MARK: - Write-failure surface
@@ -356,6 +366,7 @@ struct FanStatusView: View {
                 .font(StatusPanelSectionStyle.footnoteFont)
                 .foregroundStyle(FanPanelStyle.fault)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
         }
     }
 }

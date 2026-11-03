@@ -418,6 +418,7 @@
 "fan.writeFailed" = "设置未生效：写入配置失败（请检查权限）。";
 "fan.badge.caution" = "风扇高温兜底中";
 "fan.actualPrefix" = "实际";
+"fan.infoLabel" = "风扇说明";
 "settings.popup.volumeScroll.group" = "面板滚动";
 "settings.popup.volumeScroll" = "滚动调节音量";
 "settings.popup.volumeScroll.description" = "在状态面板内滚动即可调节输出音量。";

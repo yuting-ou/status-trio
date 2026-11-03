@@ -3,84 +3,89 @@ import Foundation
 import Testing
 @testable import StatusTrioCore
 
-/// Layout-level gates for the fan section: block order, per-fan range-line
-/// width at the narrowest panel width, and the original sections' palette
-/// source. These fail on code review regressions without needing screenshots.
+/// Layout-level gates for the fan section: block order, content-column
+/// baseline, slider shape, palette sourcing, primary-value weight.
 @MainActor
 struct FanLayoutTests {
 
-    /// ① Live readings must sit above the controls — the panel's other
-    /// sections all put the primary value directly under the title. The
-    /// order is pinned in code, not in screenshots.
-    @Test func sectionBlocksKeepReadingsAboveControls() {
+    private func viewSource() -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        return (try? String(contentsOf: root.appendingPathComponent(
+            "Sources/StatusTrioCore/UI/FanStatusView.swift"), encoding: .utf8)) ?? ""
+    }
+
+    /// ① The title row carries the live readings (headline RPM + caption
+    /// temps), controls come after it, footnotes last. Pinned in code.
+    @Test func sectionBlocksKeepControlsBelowReadingsAndHelpLast() {
         let order = FanSectionBlock.order
         let i = { (block: FanSectionBlock) in order.firstIndex(of: block)! }
-        #expect(i(.readings) < i(.modePicker))
+        #expect(i(.fault) < i(.modePicker))
         #expect(i(.modePicker) < i(.parameters))
-        #expect(i(.parameters) < i(.writeError))
-        #expect(order == [.readings, .modePicker, .parameters, .writeError])
+        #expect(i(.parameters) < i(.footnotes))
+        #expect(i(.footnotes) < i(.writeError))
+        #expect(order == [.fault, .modePicker, .parameters, .footnotes, .writeError])
     }
 
-    /// ③ The joined range line once wrapped between a label and its value
-    /// ("右" detached from its numbers). Per-fan lines must each contain
-    /// their own label AND fit inside the panel's text width at the narrow
-    /// (and only) panel width, measured with the actual footnote font proxy
-    /// — a rendering-level check, not just a string-constant check.
-    @Test func perFanRangeLinesCarryTheirLabelAndFitThePanel() {
-        let loc = Localization(
-            defaults: UserDefaults(suiteName: "FanLayoutTests.\(UUID().uuidString)") ?? .standard,
-            preferredLanguages: ["zh-Hans"]
-        )
-        var s = FanPanelState()
-        s.daemonAlive = true
-        s.expectedFanCount = 2
-        s.fans = [
-            FanReading(id: 0, actualRPM: 2745, targetRPM: 2464,
-                       range: FanRPMRange(min: 1350, max: 5349)),
-            FanReading(id: 1, actualRPM: 3006, targetRPM: 2661,
-                       range: FanRPMRange(min: 1458, max: 5777)),
-        ]
-        let lines = FanPanelText.rangeNoteLines(state: s, localization: loc)
-        #expect(lines.count == 2)
-        // Each line keeps its own label next to its own numbers.
-        #expect(lines[0].contains("左") && lines[0].contains("1350–5349"))
-        #expect(lines[1].contains("右") && lines[1].contains("1458–5777"))
-
-        // Measured width at the footnote size must fit the 302pt text column
-        // (330 panel − 2×14 padding), so a line can never wrap mid-pair.
-        // .caption2 resolves to ~10pt on macOS; measure with the font the
-        // text system actually uses for CJK+Latin mixes.
-        let font = NSFont.systemFont(ofSize: 10)
-        for line in lines {
-            let width = (line as NSString).size(withAttributes: [.font: font]).width
-            #expect(width < 302, "「\(line)」 measures \(width)pt — would wrap")
-        }
+    /// ① Primary value is the headline-weight RPM line — same visual weight
+    /// as battery's 100% and Wi-Fi's name. Source-level guard: a font change
+    /// is invisible to behavior tests.
+    @Test func primaryValueRendersAtTitleWeight() {
+        let source = viewSource()
+        #expect(source.contains("FanPanelText.primaryRpmLine("))
+        #expect(source.contains(".font(StatusPanelSectionStyle.titleFont)"))
+        // And the primary line is built from actual RPM, not a temperature.
+        #expect(FanPanelText.primaryRpmLine(
+            state: {
+                var s = FanPanelState(); s.daemonAlive = true
+                s.fans = [FanReading(id: 0, actualRPM: 2464, targetRPM: nil,
+                                     range: FanRPMRange(min: 1350, max: 5349))]
+                return s
+            }(),
+            localization: Localization(
+                defaults: UserDefaults(suiteName: "FanLayout.\(UUID().uuidString)") ?? .standard,
+                preferredLanguages: ["zh-Hans"])
+        ) == "2464 RPM")
     }
 
-    /// ② The original sections' subtitle/percentage texts must source their
-    /// color from the measured palette — one scale for the whole panel.
-    /// Guarded at source level because a foregroundStyle regression is
-    /// invisible to behavior tests.
+    /// ② One content baseline: everything below the title row starts at the
+    /// icon's right edge (iconFrame 24 + rowSpacing 10 = 34pt inset).
+    @Test func contentColumnBaselineIsShared() {
+        #expect(StatusPanelSectionStyle.contentLeadingInset
+            == StatusPanelSectionStyle.iconFrame + StatusPanelSectionStyle.rowSpacing)
+        #expect(StatusPanelSectionStyle.contentLeadingInset == 34)
+        let source = viewSource()
+        #expect(source.contains(".padding(.leading, StatusPanelSectionStyle.contentLeadingInset)"))
+    }
+
+    /// ⑥ The manual slider mirrors the volume slider's shape: no leading
+    /// percent label, no tick marks, percent trailing at caption size.
+    @Test func manualSliderMatchesVolumeSliderShape() {
+        let source = viewSource()
+        #expect(source.contains(".frame(minWidth: 34, alignment: .trailing)"))
+        #expect(!source.contains(".frame(minWidth: 34, alignment: .leading)"))
+        // No step argument -> no tick marks under the slider.
+        #expect(!source.contains("in: FanMonitor.manualPercentRange,\n                    step:"))
+    }
+
+    /// ③ The title row's right side holds no status text.
+    @Test func titleRowRightSideHasNoStatusText() {
+        let source = viewSource()
+        #expect(!source.contains("Spacer()\n\n            if state.daemonAlive {\n                Text(headerCaptionText)"))
+    }
+
+    /// ② (continued) The original sections' subtitle/percentage texts must
+    /// source their color from the measured palette.
     @Test func originalSectionsSourceSubtitlesFromTheMeasuredPalette() {
-        let files = [
-            "BatteryStatusView.swift",
-            "NetworkStatusView.swift",
-            "VolumeControlsView.swift",
-            "VPNStatusView.swift",
-            "InputSourceStatusView.swift",
-        ]
         let root = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent() // StatusTrioCoreTests
-            .deletingLastPathComponent() // Tests
-            .deletingLastPathComponent() // repo root
-        for name in files {
-            let url = root.appendingPathComponent(
-                "Sources/StatusTrioCore/UI/\(name)")
-            let content = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-            #expect(
-                content.contains(".foregroundStyle(FanPanelStyle.caption)"),
-                "\(name) lost the measured-palette subtitle"
-            )
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        for name in ["BatteryStatusView.swift", "NetworkStatusView.swift",
+                     "VolumeControlsView.swift", "VPNStatusView.swift",
+                     "InputSourceStatusView.swift"] {
+            let content = (try? String(contentsOf: root.appendingPathComponent(
+                "Sources/StatusTrioCore/UI/\(name)"), encoding: .utf8)) ?? ""
+            #expect(content.contains(".foregroundStyle(FanPanelStyle.caption)"),
+                    "\(name) lost the measured-palette subtitle")
         }
     }
 }

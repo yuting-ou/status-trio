@@ -418,6 +418,7 @@
 "fan.writeFailed" = "لم يُطبَّق الإعداد: فشلت كتابة ملف الإعدادات (افحص الأذونات).";
 "fan.badge.caution" = "حماية المروحة من الحرارة نشطة";
 "fan.actualPrefix" = "الفعلي";
+"fan.infoLabel" = "ملاحظات المروحة";
 "settings.popup.volumeScroll.group" = "تمرير اللوحة";
 "settings.popup.volumeScroll" = "ضبط مستوى الصوت بالتمرير";
 "settings.popup.volumeScroll.description" = "مرّر داخل لوحة الحالة لتغيير مستوى صوت الإخراج.";

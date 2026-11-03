@@ -212,6 +212,32 @@ struct FanPanelTextTests {
 
     // MARK: - F20 Menu-bar badge mapping
 
+    /// ① The primary value stays the actual RPM even in fault/handback
+    /// states — never replaced by prose.
+    @Test func primaryValueSurvivesFaultAndHandback() {
+        let loc = makeLocalization()
+        var s = twoFanState()
+        s.controlFault = true
+        s.faultReasonRaw = "sensorUnavailable"
+        #expect(FanPanelText.primaryRpmLine(state: s, localization: loc)
+            == "左 2745 · 右 3006 RPM")
+        // Truly unreadable fans degrade to placeholders, not to a sentence.
+        s.faultReasonRaw = "fanStateReadFailed"
+        #expect(FanPanelText.primaryRpmLine(state: s, localization: loc)
+            == "左 — · 右 — RPM")
+    }
+
+    /// ⑦ Range footnote: one merged line when it fits the column; per-fan
+    /// lines (second without a repeated prefix) when narrow.
+    @Test func rangeFootnoteMergesWhenWideAndSplitsWhenNarrow() {
+        let loc = makeLocalization()
+        let s = twoFanState()
+        #expect(FanPanelText.rangeFootnoteLines(state: s, localization: loc, maxWidth: 400)
+            == ["范围 左 1350–5349 RPM · 右 1458–5777 RPM"])
+        #expect(FanPanelText.rangeFootnoteLines(state: s, localization: loc, maxWidth: 120)
+            == ["范围 左 1350–5349 RPM", "右 1458–5777 RPM"])
+    }
+
     @Test func badgeStateMapsFaultToCriticalAndFloorsToCaution() {
         var s = twoFanState()
 

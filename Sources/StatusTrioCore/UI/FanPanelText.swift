@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 /// Pure, testable text builders for the fan popover section. The view owns
@@ -95,6 +96,58 @@ enum FanPanelText {
             "\(fanLabel(id: id, total: total, localization: localization)) \(value(id: id))"
         }
         return "\(prefix) \(segments.joined(separator: " · ")) RPM"
+    }
+
+    /// Primary value: the fans' actual RPM (this section's functional
+    /// product). Renders at headline weight; "—" where unreadable, never
+    /// replaced by prose — the primary value is always present, fault or not.
+    static func primaryRpmLine(state: FanPanelState, localization: Localization) -> String {
+        rpmLine(state: state, localization: localization)
+    }
+
+    /// Subtitle: the decision inputs (temps) plus power draw.
+    static func subtitleLine(state: FanPanelState) -> String {
+        var line = tempsLine(state: state)
+        if let power = powerText(state: state) { line += " · \(power)" }
+        return line
+    }
+
+    /// One or two range lines. The merged single line is preferred and used
+    /// whenever it fits the (measured) column; otherwise per-fan lines where
+    /// the second line drops the repeated "范围" prefix.
+    static func rangeFootnoteLines(
+        state: FanPanelState, localization: Localization, maxWidth: CGFloat
+    ) -> [String] {
+        let prefix = localization.string(.fanRangePrefix)
+        let total = fanCount(state)
+        let perFan: [(label: String?, bounds: String)] = (0..<total).compactMap { id in
+            guard let range = state.fans.first(where: { $0.id == id })?.range else { return nil }
+            let bounds = "\(Int(range.min))–\(Int(range.max)) RPM"
+            return (total <= 1 ? nil : fanLabel(id: id, total: total, localization: localization),
+                    bounds)
+        }
+        guard !perFan.isEmpty else { return [] }
+        if perFan.count == 1, let only = perFan.first {
+            return ["\(prefix) \(only.bounds)"]
+        }
+        let merged = "\(prefix) "
+            + perFan.map { "\($0.label!) \($0.bounds)" }.joined(separator: " · ")
+        let font = NSFont.systemFont(ofSize: 10) // .caption2 proxy
+        let width = (merged as NSString).size(withAttributes: [.font: font]).width
+        if width <= maxWidth { return [merged] }
+        var lines: [String] = []
+        for (index, fan) in perFan.enumerated() {
+            lines.append(index == 0
+                ? "\(prefix) \(fan.label!) \(fan.bounds)"
+                : "\(fan.label!) \(fan.bounds)")
+        }
+        return lines
+    }
+
+    /// Info-popover content for the ⓘ entry: the two explanation notes that
+    /// no longer live permanently in the footnote area.
+    static func infoLines(localization: Localization) -> [String] {
+        [localization.string(.fanManualZeroNote), localization.string(.fanFailsafeNote)]
     }
 
     /// RPM bounds per fan, side-labeled, read from status.json — never

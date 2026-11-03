@@ -418,6 +418,7 @@
 "fan.writeFailed" = "Impostazione non applicata: scrittura della configurazione fallita (controlla i permessi).";
 "fan.badge.caution" = "Protezione termica ventole attiva";
 "fan.actualPrefix" = "Reale";
+"fan.infoLabel" = "Note ventole";
 "settings.popup.volumeScroll.group" = "Scorrimento del pannello";
 "settings.popup.volumeScroll" = "Regola il volume scorrendo";
 "settings.popup.volumeScroll.description" = "Scorri all’interno del pannello di stato per cambiare il volume di uscita.";

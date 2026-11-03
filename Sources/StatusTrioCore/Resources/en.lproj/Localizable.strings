@@ -418,6 +418,7 @@
 "fan.writeFailed" = "Setting not applied: failed to write the config file (check permissions).";
 "fan.badge.caution" = "Fan safety floor active";
 "fan.actualPrefix" = "Actual";
+"fan.infoLabel" = "Fan notes";
 "settings.popup.volumeScroll.group" = "Panel Scrolling";
 "settings.popup.volumeScroll" = "Adjust Volume by Scrolling";
 "settings.popup.volumeScroll.description" = "Scroll inside the status panel to change the output volume.";

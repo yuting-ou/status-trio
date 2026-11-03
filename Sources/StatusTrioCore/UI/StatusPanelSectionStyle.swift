@@ -24,4 +24,8 @@ enum StatusPanelSectionStyle {
     static let elementSpacing: CGFloat = 6
     /// Tighter spacing between stacked annotation lines.
     static let annotationSpacing: CGFloat = 4
+    /// Content-column leading inset: everything below the title row aligns to
+    /// the icon's right edge (icon frame 24 + row spacing 10), the same
+    /// baseline the battery/Wi-Fi/volume value texts sit on.
+    static let contentLeadingInset: CGFloat = 34
 }

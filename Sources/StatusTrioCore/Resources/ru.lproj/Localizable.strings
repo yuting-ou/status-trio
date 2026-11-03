@@ -418,6 +418,7 @@
 "fan.writeFailed" = "Настройка не применена: не удалось записать конфигурацию (проверьте права).";
 "fan.badge.caution" = "Защита вентилятора от жары активна";
 "fan.actualPrefix" = "Факт";
+"fan.infoLabel" = "Примечания о вентиляторе";
 "settings.popup.volumeScroll.group" = "Прокрутка панели";
 "settings.popup.volumeScroll" = "Регулировать громкость прокруткой";
 "settings.popup.volumeScroll.description" = "Прокручивайте внутри панели состояния, чтобы изменить громкость вывода.";
