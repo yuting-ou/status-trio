@@ -74,8 +74,8 @@ struct FanStatusView: View {
                     .font(StatusPanelSectionStyle.readingFont)
                     .monospacedDigit()
                     .foregroundStyle(FanPanelStyle.caption)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    // Readings must never truncate: narrow columns wrap.
+                    .fixedSize(horizontal: false, vertical: true)
                 Text(stateLineText)
                     .font(StatusPanelSectionStyle.footnoteFont)
                     .foregroundStyle(FanPanelStyle.footnote)
@@ -224,15 +224,43 @@ struct FanStatusView: View {
         } else if state.reasonRaw == "aiIdle" {
             EmptyView() // handback already shown in the state line
         } else if let learned = state.aiLearnedPercent {
-            Text(localization.format(.fanLearnedAirflowLine, Int(learned.rounded())))
-                .font(StatusPanelSectionStyle.footnoteFont)
-                .monospacedDigit()
-                .foregroundStyle(FanPanelStyle.footnote)
-                .help(localization.string(.fanLearnedAirflowHelp))
+            HStack(spacing: 4) {
+                Text(localization.format(.fanLearnedAirflowShort, Int(learned.rounded())))
+                    .font(StatusPanelSectionStyle.footnoteFont)
+                    .monospacedDigit()
+                    .foregroundStyle(FanPanelStyle.footnote)
+                infoButton
+            }
         }
     }
 
     // MARK: - Manual controls (slider mirrors the volume section's shape)
+
+    /// ⓘ entry — tap or keyboard-activate for the explanation notes.
+    private var infoButton: some View {
+        Button {
+            showInfo.toggle()
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(localization.string(.fanInfoLabel))
+        .help(localization.string(.fanInfoLabel))
+        .popover(isPresented: $showInfo, arrowEdge: .trailing) {
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(FanPanelText.infoLines(state: state, localization: localization), id: \.self) { line in
+                    Text(line)
+                        .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(10)
+            .frame(width: 240)
+        }
+    }
 
     private var manualControls: some View {
         VStack(alignment: .leading, spacing: StatusPanelSectionStyle.annotationSpacing) {
@@ -258,7 +286,12 @@ struct FanStatusView: View {
                     .frame(minWidth: 34, alignment: .trailing)
                     .accessibilityHidden(true)
             }
-            HStack(spacing: 6) {
+            // Gear chips: adaptive grid — wraps to two rows instead of
+            // clipping the 100% chip at narrow widths.
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 52), spacing: 6)],
+                spacing: 6
+            ) {
                 ForEach([0.0, 25.0, 50.0, 75.0, 100.0], id: \.self) { gear in
                     let current = draggedPercent ?? state.manualPercent ?? 30
                     let active = abs(current - gear) < 0.5
@@ -267,7 +300,7 @@ struct FanStatusView: View {
                         monitor.setManualPercent(gear)
                     } label: {
                         Text(gear == 0
-                             ? localization.string(.fanPresetQuiet)
+                             ? "\(localization.string(.fanPresetQuiet)) 0%"
                              : "\(Int(gear))%")
                             .font(StatusPanelSectionStyle.footnoteFont
                                 .weight(active ? .semibold : .regular))
@@ -287,7 +320,7 @@ struct FanStatusView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(gear == 0
-                        ? localization.string(.fanPresetQuiet)
+                        ? localization.string(.fanGearQuietA11y)
                         : "\(Int(gear))%")
                 }
             }
@@ -330,28 +363,7 @@ struct FanStatusView: View {
                     }
                 }
                 Spacer()
-                Button {
-                    showInfo.toggle()
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(localization.string(.fanInfoLabel))
-                .help(localization.string(.fanInfoLabel))
-                .popover(isPresented: $showInfo, arrowEdge: .trailing) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(FanPanelText.infoLines(localization: localization), id: \.self) { line in
-                            Text(line)
-                                .font(.caption)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                    .padding(10)
-                    .frame(width: 240)
-                }
+                infoButton
             }
             .padding(.leading, StatusPanelSectionStyle.contentLeadingInset)
         }

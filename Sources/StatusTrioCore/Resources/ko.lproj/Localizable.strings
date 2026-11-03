@@ -400,12 +400,8 @@
 "fan.side.fan" = "팬";
 "fan.manual.zero" = "0% = 최저 속도 · 100% = 전속";
 "fan.failsafeNote" = "92°C 이상이면 자동 전속";
-"fan.learnedAirflow.help" = "현재 온도를 유지하기 위해 이 기기가 학습한 필요 풍량";
-"fan.learnedAirflow.line" = "현재 온도 유지에 필요한 자기학습 풍량 %d%%";
 "fan.aiTargetHint" = "목표 온도가 높을수록 조용";
 "fan.fault.sensorUnavailable" = "온도 센서 사용 불가";
-"fan.fault.sensorImplausible" = "온도 읽기 고착 의심";
-"fan.fault.sensorBelowAmbient" = "온도 읽기가 주변보다 낮음";
 "fan.fault.smcWriteFailed" = "SMC 쓰기 실패";
 "fan.fault.fanStateReadFailed" = "팬 상태 읽기 실패";
 "fan.fault.fanFeedbackMismatch" = "팬 속도가 목표를 따르지 않음";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "팬 하드웨어를 확인하세요. 지속되면 로그 확인";
 "fan.managedExternally" = "외부에서 관리 중(%@)";
 "fan.controlFault" = "팬 제어 오류";
+"fan.fault.sensorNamed" = "%@ 온도 센서 실패(나머지 값은 유효)";
+"fan.learnedAirflow.short" = "자기학습 풍량 %d%%";
+"fan.learnedAirflow.explain" = "자기학습 풍량: 현재 온도를 유지하기 위해 이 기기가 학습한 풍량 출력.";
+"fan.quietGearNote" = "저소음 = 0% = 최저 속도 운전(팬은 계속 회전)";
+"fan.gearQuietA11y" = "저소음, 0%, 최저 속도";
 "fan.staleData" = "팬 데이터가 %d초 전에 멈췄습니다 — 데몬 중단 가능성.";
 "fan.writeFailed" = "설정이 적용되지 않았습니다: 설정 파일 쓰기 실패(권한 확인).";
 "fan.badge.caution" = "팬 고온 보호 작동 중";

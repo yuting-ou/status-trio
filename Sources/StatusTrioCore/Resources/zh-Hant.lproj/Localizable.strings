@@ -400,12 +400,8 @@
 "fan.side.fan" = "風扇";
 "fan.manual.zero" = "0% = 最低轉速 · 100% = 全速";
 "fan.failsafeNote" = "高溫 92°C 自動全速兜底";
-"fan.learnedAirflow.help" = "目前溫度下，本機學習到的維持溫度所需風量";
-"fan.learnedAirflow.line" = "穩住目前溫度的自學風量 %d%%";
 "fan.aiTargetHint" = "目標溫度越高越安靜";
 "fan.fault.sensorUnavailable" = "溫度感測器不可用";
-"fan.fault.sensorImplausible" = "溫度讀數疑似失真（卡死）";
-"fan.fault.sensorBelowAmbient" = "溫度讀數疑似失真（低於環境）";
 "fan.fault.smcWriteFailed" = "SMC 寫入失敗";
 "fan.fault.fanStateReadFailed" = "風扇狀態讀取失敗";
 "fan.fault.fanFeedbackMismatch" = "風扇轉速未跟隨目標";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "請檢查風扇硬體；持續異常請查看日誌";
 "fan.managedExternally" = "由他處管理（%@）";
 "fan.controlFault" = "風扇控制故障";
+"fan.fault.sensorNamed" = "%@ 溫度感測器失效（其餘讀數仍有效）";
+"fan.learnedAirflow.short" = "自學風量 %d%%";
+"fan.learnedAirflow.explain" = "自學風量：本機學習到的、穩住目前溫度所需的風量輸出。";
+"fan.quietGearNote" = "安靜 = 0% = 最低轉速運轉（風扇不停轉）";
+"fan.gearQuietA11y" = "安靜，0%，最低轉速";
 "fan.staleData" = "風扇資料已過期（%d 秒前）——守護程式可能已停止。";
 "fan.writeFailed" = "設定未生效：寫入設定失敗（請檢查權限）。";
 "fan.badge.caution" = "風扇高溫兜底中";

@@ -68,6 +68,20 @@ struct FanLayoutTests {
         #expect(!source.contains("in: FanMonitor.manualPercentRange,\n                    step:"))
     }
 
+    /// ②(窄宽) Readings never truncate and gear chips wrap instead of
+    /// clipping: subtitle must wrap (no tail/middle truncation), chips must
+    /// be an adaptive grid, and the quiet chip names its percent.
+    @Test func narrowWidthNeverHidesReadingsOrGears() {
+        let source = viewSource()
+        // Subtitle wraps: no lineLimit(1)/truncation on the subtitle line.
+        #expect(source.contains("FanPanelText.subtitleLine(state: state))\n")
+            && !source.contains(".truncationMode(.middle)"))
+        // Chips: adaptive grid with a minimum that fits "安静 0%" / "100%".
+        #expect(source.contains("LazyVGrid"))
+        #expect(source.contains("GridItem(.adaptive(minimum: 52)"))
+        #expect(source.contains("\"\\(localization.string(.fanPresetQuiet)) 0%\""))
+    }
+
     /// ③ The title row's right side holds no status text.
     @Test func titleRowRightSideHasNoStatusText() {
         let source = viewSource()

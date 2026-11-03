@@ -400,12 +400,8 @@
 "fan.side.fan" = "Vent. ";
 "fan.manual.zero" = "0 % = velocidad mínima · 100 % = máxima";
 "fan.failsafeNote" = "Por encima de 92 °C el demonio fuerza velocidad máxima";
-"fan.learnedAirflow.help" = "Flujo de aire que esta máquina aprendió necesario para mantener la temperatura actual";
-"fan.learnedAirflow.line" = "Ventilación autoaprendida para esta temperatura: %d%%";
 "fan.aiTargetHint" = "Objetivo más alto = más silencio";
 "fan.fault.sensorUnavailable" = "Sensores de temperatura no disponibles";
-"fan.fault.sensorImplausible" = "Lectura de temperatura atascada";
-"fan.fault.sensorBelowAmbient" = "Lectura por debajo del ambiente";
 "fan.fault.smcWriteFailed" = "Escritura SMC fallida";
 "fan.fault.fanStateReadFailed" = "Lectura de estado del ventilador fallida";
 "fan.fault.fanFeedbackMismatch" = "El ventilador no sigue el objetivo";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "revisa el hardware del ventilador; logs si persiste";
 "fan.managedExternally" = "Gestionado externamente (%@)";
 "fan.controlFault" = "Fallo de control del ventilador";
+"fan.fault.sensorNamed" = "Sensor de temperatura %@ fallido (resto de lecturas válidas)";
+"fan.learnedAirflow.short" = "Ventilación aprendida %d%%";
+"fan.learnedAirflow.explain" = "Ventilación aprendida: la salida que esta máquina aprendió necesaria para mantener la temperatura actual.";
+"fan.quietGearNote" = "Silencioso = 0 % = velocidad mínima (los ventiladores siguen girando)";
+"fan.gearQuietA11y" = "Silencioso, 0 por ciento, velocidad mínima";
 "fan.staleData" = "Datos del ventilador obsoletos (%d s) — el demonio puede haberse detenido.";
 "fan.writeFailed" = "Ajuste no aplicado: no se pudo escribir la configuración (revisa permisos).";
 "fan.badge.caution" = "Protección térmica del ventilador activa";

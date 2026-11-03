@@ -400,12 +400,8 @@
 "fan.side.fan" = "Ventola ";
 "fan.manual.zero" = "0% = velocità minima · 100% = massima";
 "fan.failsafeNote" = "Oltre 92 °C il daemon forza la massima velocità";
-"fan.learnedAirflow.help" = "Flusso d'aria che questa macchina ha imparato necessario per mantenere la temperatura attuale";
-"fan.learnedAirflow.line" = "Ventilazione auto-appresa per questa temperatura: %d%%";
 "fan.aiTargetHint" = "Obiettivo più alto = più silenzioso";
 "fan.fault.sensorUnavailable" = "Sensori di temperatura non disponibili";
-"fan.fault.sensorImplausible" = "Lettura temperatura bloccata";
-"fan.fault.sensorBelowAmbient" = "Lettura sotto l'ambiente";
 "fan.fault.smcWriteFailed" = "Scrittura SMC fallita";
 "fan.fault.fanStateReadFailed" = "Lettura stato ventole fallita";
 "fan.fault.fanFeedbackMismatch" = "Ventole non seguono il target";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "controlla l'hardware delle ventole; log se persiste";
 "fan.managedExternally" = "Gestito altrove (%@)";
 "fan.controlFault" = "Guasto controllo ventole";
+"fan.fault.sensorNamed" = "Sensore di temperatura %@ guasto (altre letture valide)";
+"fan.learnedAirflow.short" = "Ventilazione appresa %d%%";
+"fan.learnedAirflow.explain" = "Ventilazione appresa: l'uscita che questa macchina ha imparato necessaria per mantenere la temperatura attuale.";
+"fan.quietGearNote" = "Silenzioso = 0% = velocità minima (le ventole continuano a girare)";
+"fan.gearQuietA11y" = "Silenzioso, 0 percento, velocità minima";
 "fan.staleData" = "Dati ventole obsoleti (%d s) — il daemon potrebbe essere fermo.";
 "fan.writeFailed" = "Impostazione non applicata: scrittura della configurazione fallita (controlla i permessi).";
 "fan.badge.caution" = "Protezione termica ventole attiva";

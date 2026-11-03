@@ -400,12 +400,8 @@
 "fan.side.fan" = "Vent. ";
 "fan.manual.zero" = "0% = velocidade mínima · 100% = máxima";
 "fan.failsafeNote" = "Acima de 92 °C o daemon força velocidade máxima";
-"fan.learnedAirflow.help" = "Fluxo de ar que esta máquina aprendeu ser necessário para manter a temperatura atual";
-"fan.learnedAirflow.line" = "Ventilação autoaprendida para esta temperatura: %d%%";
 "fan.aiTargetHint" = "Alvo mais alto = mais silencioso";
 "fan.fault.sensorUnavailable" = "Sensores de temperatura indisponíveis";
-"fan.fault.sensorImplausible" = "Leitura de temperatura travada";
-"fan.fault.sensorBelowAmbient" = "Leitura abaixo do ambiente";
 "fan.fault.smcWriteFailed" = "Escrita SMC falhou";
 "fan.fault.fanStateReadFailed" = "Leitura do estado da ventoinha falhou";
 "fan.fault.fanFeedbackMismatch" = "Ventoinha não segue o alvo";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "verifique o hardware da ventoinha; logs se persistir";
 "fan.managedExternally" = "Gerenciado externamente (%@)";
 "fan.controlFault" = "Falha no controle da ventoinha";
+"fan.fault.sensorNamed" = "Sensor de temperatura %@ falhou (demais leituras válidas)";
+"fan.learnedAirflow.short" = "Ventilação aprendida %d%%";
+"fan.learnedAirflow.explain" = "Ventilação aprendida: a saída que esta máquina aprendeu ser necessária para manter a temperatura atual.";
+"fan.quietGearNote" = "Silencioso = 0% = velocidade mínima (ventoinhas continuam girando)";
+"fan.gearQuietA11y" = "Silencioso, 0 por cento, velocidade mínima";
 "fan.staleData" = "Dados da ventoinha desatualizados (%d s) — o daemon pode ter parado.";
 "fan.writeFailed" = "Ajuste não aplicado: falha ao gravar a configuração (verifique permissões).";
 "fan.badge.caution" = "Proteção térmica da ventoinha ativa";

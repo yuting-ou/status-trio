@@ -165,6 +165,59 @@ struct FanMonitorTests {
         #expect(monitor.state.gpuTemp == 41.0)
     }
 
+    // MARK: - ① Manual percent pending (intent vs daemon-reported target)
+
+    private func manualStatus(targets: [Double]) -> [String: Any] {
+        var status = freshStatus()
+        status["mode"] = "manual"
+        status["reason"] = "manual"
+        status["fans"] = [
+            ["id": 0, "actualRPM": targets[0], "targetRPM": targets[0],
+             "minRPM": 1350.0, "maxRPM": 5349.0],
+            ["id": 1, "actualRPM": targets[1], "targetRPM": targets[1],
+             "minRPM": 1458.0, "maxRPM": 5777.0],
+        ] as [[String: Any]]
+        return status
+    }
+
+    @Test func manualPendingWhenTargetHasNotReachedTheSlider() throws {
+        // 45% → expect 3150/3402; daemon still reporting an older target
+        // (e.g. mid-ramp) must surface as pending, never as settled.
+        let (monitor, _) = try makeFixture(
+            status: manualStatus(targets: [2464, 2661]),
+            config: ["mode": "manual", "manualPercent": 45]
+        )
+        monitor.refresh()
+        #expect(monitor.state.manualPercentPending == true)
+
+        // Settled at the exact mapping → not pending.
+        let (settled, _) = try makeFixture(
+            status: manualStatus(targets: [3150, 3402]),
+            config: ["mode": "manual", "manualPercent": 45]
+        )
+        settled.refresh()
+        #expect(settled.state.manualPercentPending == false)
+        #expect(settled.state.modePending == false)
+    }
+
+    @Test func manualPendingSuppressedDuringOverridesAndOffsets() throws {
+        // A quiet-cap override legitimately caps the target below the mapping.
+        var capped = manualStatus(targets: [2464, 2661])
+        capped["reason"] = "quiet"
+        let (m1, _) = try makeFixture(
+            status: capped, config: ["mode": "manual", "manualPercent": 45])
+        m1.refresh()
+        #expect(m1.state.manualPercentPending == false)
+
+        // Non-zero offsets shift targets by design — mapping check skipped.
+        let (m2, _) = try makeFixture(
+            status: manualStatus(targets: [2464, 2661]),
+            config: ["mode": "manual", "manualPercent": 45, "fanOffsets": [10.0, 0.0]]
+        )
+        m2.refresh()
+        #expect(m2.state.manualPercentPending == false)
+    }
+
     // MARK: - Selection mapping
 
     @Test func modeSelectionMapsAllFourDaemonModes() throws {

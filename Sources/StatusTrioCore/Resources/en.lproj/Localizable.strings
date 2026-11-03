@@ -400,12 +400,8 @@
 "fan.side.fan" = "Fan ";
 "fan.manual.zero" = "0% = minimum speed · 100% = full speed";
 "fan.failsafeNote" = "Above 92°C the daemon forces full speed";
-"fan.learnedAirflow.help" = "Airflow this machine has learned it needs to hold the current temperature";
-"fan.learnedAirflow.line" = "Self-taught airflow to hold this temperature: %d%%";
 "fan.aiTargetHint" = "Higher target temperature = quieter";
 "fan.fault.sensorUnavailable" = "Temperature sensors unavailable";
-"fan.fault.sensorImplausible" = "Temperature reading stuck";
-"fan.fault.sensorBelowAmbient" = "Temperature reading below ambient";
 "fan.fault.smcWriteFailed" = "SMC write failed";
 "fan.fault.fanStateReadFailed" = "Fan state read failed";
 "fan.fault.fanFeedbackMismatch" = "Fan speed not following target";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "check the fan hardware; check logs if it persists";
 "fan.managedExternally" = "Managed elsewhere (%@)";
 "fan.controlFault" = "Fan control fault";
+"fan.fault.sensorNamed" = "%@ temperature sensor failed (other readings still valid)";
+"fan.learnedAirflow.short" = "Learned airflow %d%%";
+"fan.learnedAirflow.explain" = "Learned airflow: the fan output this machine has learned it needs to hold the current temperature.";
+"fan.quietGearNote" = "安静 = 0% = minimum speed (fans keep spinning at their floor)";
+"fan.gearQuietA11y" = "Quiet, 0 percent, minimum speed";
 "fan.staleData" = "Fan data is stale (%ds old) — daemon may have stopped.";
 "fan.writeFailed" = "Setting not applied: failed to write the config file (check permissions).";
 "fan.badge.caution" = "Fan safety floor active";

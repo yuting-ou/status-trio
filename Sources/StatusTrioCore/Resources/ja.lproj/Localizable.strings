@@ -400,12 +400,8 @@
 "fan.side.fan" = "ファン";
 "fan.manual.zero" = "0% = 最低回転 · 100% = 全速";
 "fan.failsafeNote" = "92°C 以上で自動的に全速";
-"fan.learnedAirflow.help" = "現在の温度を維持するためにこのマシンが学習した必要風量";
-"fan.learnedAirflow.line" = "現在の温度を保つ自学習の風量 %d%%";
 "fan.aiTargetHint" = "目標温度が高いほど静か";
 "fan.fault.sensorUnavailable" = "温度センサー利用不可";
-"fan.fault.sensorImplausible" = "温度読み取りが固着";
-"fan.fault.sensorBelowAmbient" = "温度読み取りが環境以下";
 "fan.fault.smcWriteFailed" = "SMC 書き込み失敗";
 "fan.fault.fanStateReadFailed" = "ファン状態の読み取り失敗";
 "fan.fault.fanFeedbackMismatch" = "ファンが目標に追従しません";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "ファンハードウェアを確認。継続する場合はログを確認";
 "fan.managedExternally" = "外部で管理中（%@）";
 "fan.controlFault" = "ファン制御の故障";
+"fan.fault.sensorNamed" = "%@ 温度センサー失效（他の読み取りは有効）";
+"fan.learnedAirflow.short" = "自学習風量 %d%%";
+"fan.learnedAirflow.explain" = "自学習風量：現在の温度を維持するためにこのマシンが学習した風量。";
+"fan.quietGearNote" = "静音 = 0% = 最低回転で運転（ファンは停止しません）";
+"fan.gearQuietA11y" = "静音、0%、最低回転";
 "fan.staleData" = "ファンデータは %d 秒前のものです — デーモン停止の可能性。";
 "fan.writeFailed" = "設定は反映されていません：設定ファイルの書き込みに失敗（権限を確認）。";
 "fan.badge.caution" = "ファン保護で全速中";

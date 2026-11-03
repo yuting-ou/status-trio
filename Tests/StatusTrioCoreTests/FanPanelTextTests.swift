@@ -192,6 +192,10 @@ struct FanPanelTextTests {
         s.controlFault = true
 
         s.faultReasonRaw = "sensorUnavailable"
+        // All channels still reading → generic wording (no single channel to name).
+        s.cpuTemp = 58.4
+        s.gpuTemp = 52.1
+        s.ssdTemp = 35.2
         #expect(FanPanelText.faultLine(state: s, localization: loc)
             == "温度传感器不可用 · 已交还系统调度兜底，无需操作；若持续请查看日志")
 
@@ -208,6 +212,62 @@ struct FanPanelTextTests {
         s.controlFault = false
         s.faultReasonRaw = "sensorUnavailable"
         #expect(FanPanelText.faultLine(state: s, localization: loc) == nil)
+    }
+
+    // MARK: - ① Percent↔target mapping (the daemon's own formula)
+
+    @Test func expectedTargetMatchesDaemonMapping() {
+        let left = FanRPMRange(min: 1350, max: 5349)
+        let right = FanRPMRange(min: 1458, max: 5777)
+        // 45% → 3150 / 3402 (min + 0.45·(max−min), rounded).
+        #expect(FanPanelText.expectedTargetRPM(range: left, percent: 45) == 3150)
+        #expect(FanPanelText.expectedTargetRPM(range: right, percent: 45) == 3402)
+        #expect(FanPanelText.expectedTargetRPM(range: left, percent: 0) == 1350)
+        #expect(FanPanelText.expectedTargetRPM(range: left, percent: 100) == 5349)
+    }
+
+    // MARK: - ③ Short learned-airflow label
+
+    @Test func learnedAirflowUsesShortLabelWithPercent() {
+        let loc = makeLocalization()
+        let s = loc.format(.fanLearnedAirflowShort, 42)
+        #expect(s == "自学风量 42%")
+    }
+
+    // MARK: - ⑤ Fault names the failing sensor
+
+    @Test func faultLineNamesTheFailingSensor() {
+        let loc = makeLocalization()
+        var s = twoFanState()
+        s.controlFault = true
+        s.faultReasonRaw = "sensorUnavailable"
+        s.cpuTemp = nil        // CPU channel failed
+        s.gpuTemp = 52.1
+        s.ssdTemp = 35.2
+        #expect(FanPanelText.faultLine(state: s, localization: loc)
+            == "CPU 温度传感器失效（其余读数仍有效） · 已交还系统调度兜底，无需操作；若持续请查看日志")
+        // All channels failed → generic text.
+        s.gpuTemp = nil
+        s.ssdTemp = nil
+        #expect((FanPanelText.faultLine(state: s, localization: loc) ?? "")
+            .hasPrefix("温度传感器不可用"))
+    }
+
+    // MARK: - ⑦ Mode-aware info popover
+
+    @Test func infoPopoverContentFollowsMode() {
+        let loc = makeLocalization()
+        var manual = twoFanState()
+        manual.modeSelection = .manual
+        let manualLines = FanPanelText.infoLines(state: manual, localization: loc)
+        #expect(manualLines.count == 3)
+        #expect(manualLines[1].contains("安静 = 0%"))
+
+        var ai = twoFanState()
+        ai.modeSelection = .ai
+        let aiLines = FanPanelText.infoLines(state: ai, localization: loc)
+        #expect(aiLines.count == 2)
+        #expect(aiLines[0].contains("自学风量"))
     }
 
     // MARK: - F20 Menu-bar badge mapping

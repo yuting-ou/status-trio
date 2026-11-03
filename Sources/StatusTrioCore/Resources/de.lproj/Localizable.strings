@@ -400,12 +400,8 @@
 "fan.side.fan" = "Lüfter ";
 "fan.manual.zero" = "0 % = Mindestdrehzahl · 100 % = Vollspeed";
 "fan.failsafeNote" = "Ab 92 °C erzwingt der Daemon Vollspeed";
-"fan.learnedAirflow.help" = "Luftleistung, die dieser Mac zum Halten der aktuellen Temperatur gelernt hat";
-"fan.learnedAirflow.line" = "Selbst gelernte Lüftung für diese Temperatur: %d%%";
 "fan.aiTargetHint" = "Höhere Zieltemperatur = leiser";
 "fan.fault.sensorUnavailable" = "Temperatursensoren nicht verfügbar";
-"fan.fault.sensorImplausible" = "Temperaturwert klemmt";
-"fan.fault.sensorBelowAmbient" = "Temperaturwert unter Umgebung";
 "fan.fault.smcWriteFailed" = "SMC-Schreiben fehlgeschlagen";
 "fan.fault.fanStateReadFailed" = "Lüfterstatus nicht lesbar";
 "fan.fault.fanFeedbackMismatch" = "Lüfter folgt Ziel nicht";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "Lüfterhardware prüfen; bei Dauerzustand Logs ansehen";
 "fan.managedExternally" = "Extern verwaltet (%@)";
 "fan.controlFault" = "Lüftersteuerung gestört";
+"fan.fault.sensorNamed" = "%@-Temperatursensor ausgefallen (andere Werte gültig)";
+"fan.learnedAirflow.short" = "Gelernte Lüftung %d%%";
+"fan.learnedAirflow.explain" = "Gelernte Lüftung: die Lüfterleistung, die dieser Mac zum Halten der aktuellen Temperatur gelernt hat.";
+"fan.quietGearNote" = "Leise = 0 % = Mindestdrehzahl (Lüfter laufen weiter)";
+"fan.gearQuietA11y" = "Leise, 0 Prozent, Mindestdrehzahl";
 "fan.staleData" = "Lüfterdaten veraltet (%d s) — Daemon evtl. gestoppt.";
 "fan.writeFailed" = "Nicht übernommen: Konfiguration konnte nicht geschrieben werden (Rechte prüfen).";
 "fan.badge.caution" = "Lüfter-Hitzeschutz aktiv";

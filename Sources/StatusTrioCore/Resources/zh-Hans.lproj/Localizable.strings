@@ -400,12 +400,8 @@
 "fan.side.fan" = "风扇";
 "fan.manual.zero" = "0% = 最低转速 · 100% = 全速";
 "fan.failsafeNote" = "高温 92°C 自动全速兜底";
-"fan.learnedAirflow.help" = "当前温度下，本机学习到的维持温度所需风量";
-"fan.learnedAirflow.line" = "稳住当前温度的自学风量 %d%%";
 "fan.aiTargetHint" = "目标温度越高越安静";
 "fan.fault.sensorUnavailable" = "温度传感器不可用";
-"fan.fault.sensorImplausible" = "温度读数疑似失真（卡死）";
-"fan.fault.sensorBelowAmbient" = "温度读数疑似失真（低于环境）";
 "fan.fault.smcWriteFailed" = "SMC 写入失败";
 "fan.fault.fanStateReadFailed" = "风扇状态读取失败";
 "fan.fault.fanFeedbackMismatch" = "风扇转速未跟随目标";
@@ -414,6 +410,11 @@
 "fan.faultGuide.fan" = "请检查风扇硬件；持续异常请查看日志";
 "fan.managedExternally" = "由他处管理（%@）";
 "fan.controlFault" = "风扇控制故障";
+"fan.fault.sensorNamed" = "%@ 温度传感器失效（其余读数仍有效）";
+"fan.learnedAirflow.short" = "自学风量 %d%%";
+"fan.learnedAirflow.explain" = "自学风量：本机学习到的、稳住当前温度所需的风量输出。";
+"fan.quietGearNote" = "安静 = 0% = 最低转速运转（风扇不停转）";
+"fan.gearQuietA11y" = "安静，0%，最低转速";
 "fan.staleData" = "风扇数据已过期（%d 秒前）——守护进程可能已停止。";
 "fan.writeFailed" = "设置未生效：写入配置失败（请检查权限）。";
 "fan.badge.caution" = "风扇高温兜底中";

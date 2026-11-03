@@ -112,6 +112,14 @@ enum FanPanelText {
         return line
     }
 
+    /// The daemon's own percent→RPM mapping (FanCtl SMCCore/Fans.swift:
+    /// minRPM + p·(maxRPM−minRPM)). Used ONLY to detect "config intent not
+    /// yet materialized in the reported target" — never to display a target
+    /// ourselves (displayed targets always come from status.json).
+    static func expectedTargetRPM(range: FanRPMRange, percent: Double) -> Double {
+        (range.min + (percent / 100) * (range.max - range.min)).rounded()
+    }
+
     /// One or two range lines. The merged single line is preferred and used
     /// whenever it fits the (measured) column; otherwise per-fan lines where
     /// the second line drops the repeated "范围" prefix.
@@ -144,10 +152,18 @@ enum FanPanelText {
         return lines
     }
 
-    /// Info-popover content for the ⓘ entry: the two explanation notes that
-    /// no longer live permanently in the footnote area.
-    static func infoLines(localization: Localization) -> [String] {
-        [localization.string(.fanManualZeroNote), localization.string(.fanFailsafeNote)]
+    /// Info-popover content for the ⓘ entry, mode-aware: manual explains the
+    /// percent domain and the quiet gear; AI explains the learned airflow.
+    static func infoLines(state: FanPanelState, localization: Localization) -> [String] {
+        switch state.modeSelection {
+        case .ai:
+            return [localization.string(.fanLearnedAirflowExplain),
+                    localization.string(.fanAITargetHint)]
+        default:
+            return [localization.string(.fanManualZeroNote),
+                    localization.string(.fanQuietGearNote),
+                    localization.string(.fanFailsafeNote)]
+        }
     }
 
     /// RPM bounds per fan, side-labeled, read from status.json — never
@@ -168,22 +184,23 @@ enum FanPanelText {
 
     // MARK: - Fault guidance
 
-    /// Fault line, two clauses: what broke + what to do about it. Never a bare
-    /// "something is wrong".
+    /// Fault line, two clauses: what broke + what to do about it. Sensor
+    /// failures name the failing channel(s) and affirm what still reads, so
+    /// the banner never appears to contradict the readings on screen.
     static func faultLine(state: FanPanelState, localization: Localization) -> String? {
         guard state.controlFault, let raw = state.faultReasonRaw else { return nil }
         let reasonKey: LocalizationKey
         let guideKey: LocalizationKey
         switch raw {
-        case "sensorUnavailable":
-            reasonKey = .fanFaultSensorUnavailable
-            guideKey = .fanFaultGuideSensor
-        case "sensorImplausible":
-            reasonKey = .fanFaultSensorImplausible
-            guideKey = .fanFaultGuideSensor
-        case "sensorBelowAmbient":
-            reasonKey = .fanFaultSensorBelowAmbient
-            guideKey = .fanFaultGuideSensor
+        case "sensorUnavailable", "sensorImplausible", "sensorBelowAmbient":
+            var names: [String] = []
+            if state.cpuTemp == nil { names.append("CPU") }
+            if state.gpuTemp == nil { names.append("GPU") }
+            if state.ssdTemp == nil { names.append("SSD") }
+            let reasonText = names.isEmpty || names.count == 3
+                ? localization.string(.fanFaultSensorUnavailable)
+                : localization.format(.fanFaultSensorNamed, names.joined(separator: "/"))
+            return "\(reasonText) · \(localization.string(.fanFaultGuideSensor))"
         case "smcWriteFailed":
             reasonKey = .fanFaultSmcWriteFailed
             guideKey = .fanFaultGuideSmcWrite
@@ -253,7 +270,7 @@ enum FanPanelText {
         if state.controlFault {
             return .reason(.fanReasonAIIdle)
         }
-        if state.modePending, let selection = state.modeSelection {
+        if (state.modePending || state.manualPercentPending), let selection = state.modeSelection {
             return .pending(selection)
         }
         if let reason = state.reasonRaw {

@@ -147,6 +147,11 @@ struct FanPanelState: Equatable, Sendable {
     /// this is true the header shows a pending caption so the two mode
     /// indicators can never contradict each other.
     var modePending = false
+    /// Manual-mode intent vs. daemon-reported targets disagree: the daemon
+    /// ramps manual changes at 8%/beat, so a fresh slider value legitimately
+    /// takes a few beats to materialize. During that window the UI must say
+    /// 待生效, not pretend the shown target already equals the slider.
+    var manualPercentPending = false
     /// The learned-map value for the current temperature (decisionTrace.learned),
     /// display only.
     var aiLearnedPercent: Double?
@@ -385,8 +390,12 @@ final class FanMonitor: ObservableObject {
         }
         next.controlFault = status["controlFault"] as? Bool ?? false
 
+        // Config values needed past the parse block (offsets feed the pending
+        // check below).
+        var fanOffsets: [Double] = [0, 0]
         if let configData = try? Data(contentsOf: configURL),
            let config = try? JSONSerialization.jsonObject(with: configData) as? [String: Any] {
+            fanOffsets = (config["fanOffsets"] as? [Double]) ?? [0, 0]
             next.modeSelection = (config["mode"] as? String).flatMap(FanModeChoice.init(rawValue:))
             if let presetRaw = config["preset"] as? String,
                let preset = FanCurveChoice(rawValue: presetRaw),
@@ -411,6 +420,24 @@ final class FanMonitor: ObservableObject {
            let raw = next.modeRaw,
            let statusMode = FanModeChoice(rawValue: raw) {
             next.modePending = statusMode != selection
+        }
+
+        // Manual-percent pending: manual mode, no override reason in effect
+        // (an active quiet/ssd/failsafe cap legitimately deviates), zero fan
+        // offsets (offsets shift targets by design), and the daemon-reported
+        // targets must match the daemon's own mapping for the configured
+        // percent. Any deviation beyond rounding = the intent is still
+        // ramping in.
+        if next.daemonAlive, next.modeSelection == .manual,
+           next.reasonRaw == nil || next.reasonRaw == "manual",
+           let percent = next.manualPercent {
+            let offsetsZero = fanOffsets.allSatisfy { abs($0) < 0.01 }
+            if offsetsZero {
+                next.manualPercentPending = next.fans.contains { fan in
+                    guard let target = fan.targetRPM, let range = fan.range else { return false }
+                    return abs(target - FanPanelText.expectedTargetRPM(range: range, percent: percent)) > 2
+                }
+            }
         }
         return next
     }
