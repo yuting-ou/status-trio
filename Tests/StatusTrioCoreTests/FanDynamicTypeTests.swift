@@ -78,20 +78,10 @@ final class FanDynamicTypeTests: XCTestCase {
         let dir = FileManager.default.temporaryDirectory
             .appendingPathComponent("fandynamictype-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try JSONSerialization.data(withJSONObject: [
-            "timestamp": ISO8601DateFormatter().string(from: Date()),
-            "mode": "manual", "reason": "manual", "controlFault": false,
-            "powerWatts": 14.2,
-            "sensors": ["cpuDie": 58.4, "gpuDie": 52.1, "ssd": 35.2],
-            "fans": [
-                ["id": 0, "actualRPM": 2464.0, "targetRPM": 2464.0,
-                 "minRPM": 1350.0, "maxRPM": 5349.0],
-                ["id": 1, "actualRPM": 2661.0, "targetRPM": 2661.0,
-                 "minRPM": 1458.0, "maxRPM": 5777.0],
-            ],
-            "hardwareProfile": ["fanCount": 2],
-        ]).write(to: dir.appendingPathComponent("status.json"))
-        try JSONSerialization.data(withJSONObject: ["mode": "manual", "manualPercent": 45])
+        let fixture = FanFixture.settledManual(percent: 45)
+        try JSONSerialization.data(withJSONObject: fixture.status)
+            .write(to: dir.appendingPathComponent("status.json"))
+        try JSONSerialization.data(withJSONObject: fixture.config)
             .write(to: dir.appendingPathComponent("config.json"))
         let monitor = FanMonitor(directory: dir)
         monitor.refresh()

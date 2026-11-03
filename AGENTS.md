@@ -97,6 +97,15 @@ half-unit shift. Keep `ChargingEffectRenderingTests` fingerprints honest.
 
 ## Non-Negotiable Invariants
 
+- **Fork rule (Status Trio Fan): screenshots are evidence, not illustrations.
+  Fabricating numbers in a fixture is equivalent to fabricating a test.** Every
+  value in a fan-section evidence render must derive from the real mapping or
+  a real status.json; fixtures go through `FanFixture` builders (targets are
+  computed, never hand-written), and `FanFixture.consistencyIssues` must stay
+  green. Synthetic (non-live-daemon) renders carry a visible 「合成」 banner.
+  Origin: the r5 composite once shipped a hand-written targetRPM (2700 @ 45%
+  where the daemon mapping yields 3150) — a fabricated number reached the user
+  as evidence; this rule exists so that path is mechanically closed.
 - The app runs on macOS 13 and later. The local macOS 13 static contract does
   not prove runtime compatibility; record real Ventura and current-macOS checks
   separately as PASS, FAIL, BLOCKED, or NOT RUN.

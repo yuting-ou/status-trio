@@ -78,8 +78,19 @@ struct FanLayoutTests {
             && !source.contains(".truncationMode(.middle)"))
         // Chips: adaptive grid with a minimum that fits "安静 0%" / "100%".
         #expect(source.contains("LazyVGrid"))
-        #expect(source.contains("GridItem(.adaptive(minimum: 52)"))
+        #expect(source.contains("GridItem(.adaptive(minimum: 46)"))
         #expect(source.contains("\"\\(localization.string(.fanPresetQuiet)) 0%\""))
+    }
+
+    /// ④ The widest chip label must fit the adaptive minimum so narrow
+    /// widths reflow 3+2 instead of clipping 100%.
+    @Test func widestGearLabelFitsTheGridMinimum() {
+        let label = "安静 0%"
+        let font = NSFont.systemFont(ofSize: 10, weight: .semibold) // caption2 chip label
+        let width = (label as NSString).size(withAttributes: [.font: font]).width
+        print("GEAR-LABEL-MEASURE 安静 0% at caption2 semibold = \(width)pt")
+        // 46pt column minus vertical-only padding slack.
+        #expect(width < 42, "安静 0% measures \(width)pt — would clip in a 46pt chip")
     }
 
     /// ③ The title row's right side holds no status text.

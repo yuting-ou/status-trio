@@ -289,8 +289,8 @@ struct FanStatusView: View {
             // Gear chips: adaptive grid — wraps to two rows instead of
             // clipping the 100% chip at narrow widths.
             LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 52), spacing: 6)],
-                spacing: 6
+                columns: [GridItem(.adaptive(minimum: 46), spacing: 4)],
+                spacing: 4
             ) {
                 ForEach([0.0, 25.0, 50.0, 75.0, 100.0], id: \.self) { gear in
                     let current = draggedPercent ?? state.manualPercent ?? 30
